@@ -81,12 +81,13 @@ extern std::vector<runnable_conf *> run_confs;
 extern std::vector<UartRunnable *> uart_list;
 extern std::vector<I2CRunnable *> i2c_list;
 
+void pre_state_change(uint8_t * as, uint8_t * an);
 esc_cfg_t _config = {
     .user_arg = NULL,
     .use_interrupt = 1,
     .watchdog_cnt = INT32_MAX,
     .set_defaults_hook = NULL,
-    .pre_state_change_hook = NULL,
+    .pre_state_change_hook = pre_state_change,
     .post_state_change_hook = NULL,
     .application_hook = NULL,
     .safeoutput_override = NULL,
@@ -171,17 +172,6 @@ void soes_init() {
     ecat_slv_init(&_config);
 }
 
-// void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-//     ESC_read (ESCREG_LOCALTIME, (void *) &ESCvar.Time, sizeof (ESCvar.Time));
-//     DIG_process (DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG | DIG_PROCESS_INPUTS_FLAG);
-// }
-
-uint8_t pdi_irq_flag = 0;
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    last_cycle_time = HAL_GetTick();
-    pdi_irq_flag = 1;
-}
-
 extern uint8_t do_terminate;
 extern uint8_t terminated_app_count;
 void reset_soem_app() {
@@ -203,10 +193,20 @@ void reset_soem_app() {
     Obj.master_status = 0;
     Obj.slave_status = SLAVE_INITIALIZING;
     HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_SET);
-    // vTaskDelay(200);
-    soes_init();
-    // vTaskDelay(200);
     inited = 0;
+}
+
+void pre_state_change(uint8_t * as, uint8_t * an) {
+    uint8_t target = (*as >> 4) & 0x0F;
+    if (target == ESCinit) {
+        reset_soem_app();
+    }
+}
+
+uint8_t pdi_irq_flag = 0;
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    last_cycle_time = HAL_GetTick();
+    pdi_irq_flag = 1;
 }
 
 void soes_task() {
@@ -214,10 +214,17 @@ void soes_task() {
     soes_init();
 
     while (true) {
-        // normal state
-        // ecat_slv_poll();
-        // DIG_process(DIG_PROCESS_WD_FLAG);
 
+        if (inited == 1 && HAL_GetTick() - last_cycle_time >= 10) {
+            if (Obj.slave_status >= 249) {
+                Obj.slave_status = MASTER_READY + 2;
+            } else {
+                Obj.slave_status++;
+            }
+            pdi_irq_flag = 1;
+        }
+
+        // normal state
         if (pdi_irq_flag) {
             ESC_read (ESCREG_LOCALTIME, (void *) &ESCvar.Time, sizeof (ESCvar.Time));
             DIG_process (DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG | DIG_PROCESS_INPUTS_FLAG);
@@ -225,11 +232,6 @@ void soes_task() {
         } else {
             ecat_slv_poll();
             DIG_process(DIG_PROCESS_WD_FLAG);
-        }
-
-        // accidentally disconnected state
-        if (inited == 1 && HAL_GetTick() - last_cycle_time >= 500) {
-            reset_soem_app();
         }
 
         // waiting state
