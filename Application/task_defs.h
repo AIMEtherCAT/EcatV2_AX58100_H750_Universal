@@ -84,26 +84,31 @@ private:
     uint16_t best_psc{};
     uint16_t best_arr{};
     uint16_t expected_period{};
+    uint16_t cmd[4]{};
+    uint8_t tim_started{};
 
     uint32_t calc_compare(uint16_t expected_high_pulse) const;
 };
 
 class App_External_PWM : public UartRunnable {
-    public:
-        App_External_PWM(uint8_t *args, int *offset);
+public:
+    App_External_PWM(uint8_t *args, int *offset);
 
-        void collect_inputs(uint8_t *input, int *input_offset) override;
+    void collect_inputs(uint8_t *input, int *input_offset) override;
 
-        void exit() override;
+    void exit() override;
 
+    void uart_dma_tx_finished_callback() override;
 
-    private:
-        uint8_t uart_id{};
-        uint8_t buf[37]{};
-        uint8_t enabled_channel_count;
-        uint16_t expected_period{};
-        servo_cmd_t cmd{};
-    };
+private:
+    uint8_t uart_id{};
+    uint8_t buf[37]{};
+    uint8_t enabled_channel_count{};
+    uint16_t expected_period{};
+    uint32_t last_tx_ts{};
+    uint32_t last_rst_ts{};
+    servo_cmd_t cmd{};
+};
 
 #define MS5837_D1_OSR256_CMD 0x40
 #define MS5837_D1_OSR512_CMD 0x42
@@ -147,6 +152,9 @@ private:
     uint8_t d1_cmd{};
     uint8_t d2_cmd{};
     uint32_t adc_wait_time{};
+    uint32_t last_recv_time{};
+    uint32_t last_rst_time{};
+    uint8_t inited{};
 
     enum {
         INITIALIZING,

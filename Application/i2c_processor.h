@@ -13,4 +13,6 @@ void call_i2c_send_by_dma(I2C_HandleTypeDef *huart, uint16_t addr, uint8_t *buf,
 
 void init_i2c_buf();
 
+void reset_i2c_ready();
+
 #endif //I2C_PROCESSOR_H

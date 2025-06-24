@@ -25,6 +25,9 @@ void UartRunnable::uart_recv(uint16_t, uint8_t *) {
 void UartRunnable::uart_recv_err() {
 }
 
+void UartRunnable::uart_dma_tx_finished_callback() {
+}
+
 void I2CRunnable::i2c_recv(uint8_t *) {
 }
 

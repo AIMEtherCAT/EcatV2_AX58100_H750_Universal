@@ -33,13 +33,26 @@ uint8_t usart1_ready = 1;
 uint8_t uart4_ready = 1;
 uint8_t uart8_ready = 1;
 
-void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart){
+void reset_usart1() {
+    HAL_DMA_Abort(huart1.hdmatx);
+    usart1_ready = 1;
+}
+
+void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
         usart1_ready = 1;
     } else if (huart->Instance == UART4) {
         uart4_ready = 1;
     } else if (huart->Instance == UART8) {
         uart8_ready = 1;
+    }
+
+    for (UartRunnable *runnable: uart_list) {
+        if (huart->Instance != runnable->uart_inst->Instance) {
+            continue;
+        }
+
+        runnable->uart_dma_tx_finished_callback();
     }
 }
 

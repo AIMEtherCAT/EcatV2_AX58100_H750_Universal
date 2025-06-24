@@ -25,11 +25,11 @@ public:
     virtual ~CustomRunnable() = default;
 
     // unit: ms
-    uint16_t period;
+    uint16_t period{};
 
-    uint8_t task_type;
+    uint8_t task_type{};
 
-    uint8_t running;
+    uint8_t running{};
 
     virtual void run_task();
 
@@ -44,7 +44,7 @@ class CanRunnable : public virtual CustomRunnable {
 public:
     ~CanRunnable() override = default;
 
-    FDCAN_HandleTypeDef *can_inst;
+    FDCAN_HandleTypeDef *can_inst{};
 
     virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
 };
@@ -53,18 +53,20 @@ class UartRunnable : public virtual CustomRunnable {
 public:
     ~UartRunnable() override = default;
 
-    UART_HandleTypeDef *uart_inst;
+    UART_HandleTypeDef *uart_inst{};
 
     virtual void uart_recv(uint16_t size, uint8_t *rx_data);
 
     virtual void uart_recv_err();
+
+    virtual void uart_dma_tx_finished_callback();
 };
 
 class I2CRunnable : public virtual CustomRunnable {
 public:
     ~I2CRunnable() override = default;
 
-    I2C_HandleTypeDef *i2c_inst;
+    I2C_HandleTypeDef *i2c_inst{};
 
     virtual void i2c_recv(uint8_t *rx_data);
 

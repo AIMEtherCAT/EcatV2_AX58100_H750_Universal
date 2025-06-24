@@ -21,7 +21,7 @@ void soes_init();
 
 void soes_task();
 
-    void test_task();
+void test_task();
 
 #ifdef __cplusplus
 }

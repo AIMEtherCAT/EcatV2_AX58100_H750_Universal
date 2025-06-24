@@ -10,6 +10,7 @@
 #include "IOUtils.h"
 #include "dshot.h"
 #include "uart_processor.h"
+
 extern "C" {
 #include "usart.h"
 #include "device_conf.h"
@@ -30,7 +31,7 @@ App_External_PWM::App_External_PWM(uint8_t *args, int *offset) {
 
     cmd.header = 0x01;
     cmd.expected_period = expected_period;
-    for (int i=0;i<16;i++) {
+    for (int i = 0; i < 16; i++) {
         if (i < enabled_channel_count) {
             cmd.servo_cmd[i] = init_value;
         } else {
@@ -45,7 +46,7 @@ App_External_PWM::App_External_PWM(uint8_t *args, int *offset) {
 void App_External_PWM::collect_inputs(uint8_t *input, int *input_offset) {
     cmd.header = 0x01;
     cmd.expected_period = expected_period;
-    for (int i=0;i<16;i++) {
+    for (int i = 0; i < 16; i++) {
         if (i < enabled_channel_count) {
             cmd.servo_cmd[i] = read_uint16(input, input_offset);
         } else {
@@ -54,6 +55,10 @@ void App_External_PWM::collect_inputs(uint8_t *input, int *input_offset) {
     }
     memcpy(buf, &cmd, 37);
     append_CRC16_check_sum(buf, 37);
+    if (HAL_GetTick() - last_tx_ts > 10 && HAL_GetTick() - last_rst_ts < 100) {
+        last_rst_ts = HAL_GetTick();
+        reset_usart1();
+    }
     call_uart_send_by_dma(uart_inst, buf, 37);
 }
 
@@ -64,4 +69,8 @@ void App_External_PWM::exit() {
     } else if (uart_id == 4) {
         deinit_uart4();
     }
+}
+
+void App_External_PWM::uart_dma_tx_finished_callback() {
+    last_tx_ts = HAL_GetTick();
 }

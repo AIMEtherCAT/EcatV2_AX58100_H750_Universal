@@ -10,7 +10,7 @@
 #include "usart.h"
 
 extern "C" {
-    #include "ecat_slv.h"
+#include "ecat_slv.h"
 #include "device_conf.h"
 }
 
@@ -31,21 +31,17 @@ void prepare_inputs() {
 }
 
 void prepare_outputs() {
-    memcpy((uint8_t*) Obj.slave2master, &global_outputs, 8+8+5+19);
+    memcpy((uint8_t *) Obj.slave2master, &global_outputs, 8 + 8 + 5 + 19);
 }
 
-void ESC_interrupt_enable (uint32_t mask)
-{
-    if (ESCREG_ALEVENT_DC_SYNC0 & mask)
-    {
+void ESC_interrupt_enable(uint32_t mask) {
+    if (ESCREG_ALEVENT_DC_SYNC0 & mask) {
         mask &= ~ESCREG_ALEVENT_DC_SYNC0;
     }
-    if (ESCREG_ALEVENT_DC_SYNC1 & mask)
-    {
+    if (ESCREG_ALEVENT_DC_SYNC1 & mask) {
         //    mask &= ~ESCREG_ALEVENT_DC_SYNC1;
     }
-    if (ESCREG_ALEVENT_DC_LATCH & mask)
-    {
+    if (ESCREG_ALEVENT_DC_LATCH & mask) {
         // mask &= ~ESCREG_ALEVENT_DC_LATCH;
     }
 
@@ -56,18 +52,14 @@ void ESC_interrupt_enable (uint32_t mask)
  *
  * @param[in]   mask     = interrupts to disable
  */
-void ESC_interrupt_disable (uint32_t mask)
-{
-    if (ESCREG_ALEVENT_DC_SYNC0 & mask)
-    {
+void ESC_interrupt_disable(uint32_t mask) {
+    if (ESCREG_ALEVENT_DC_SYNC0 & mask) {
         mask &= ~ESCREG_ALEVENT_DC_SYNC0;
     }
-    if (ESCREG_ALEVENT_DC_SYNC1 & mask)
-    {
+    if (ESCREG_ALEVENT_DC_SYNC1 & mask) {
         //    mask &= ~ESCREG_ALEVENT_DC_SYNC1;
     }
-    if (ESCREG_ALEVENT_DC_LATCH & mask)
-    {
+    if (ESCREG_ALEVENT_DC_LATCH & mask) {
         //    mask &= ~ESCREG_ALEVENT_DC_LATCH;
     }
 
@@ -81,7 +73,8 @@ extern std::vector<runnable_conf *> run_confs;
 extern std::vector<UartRunnable *> uart_list;
 extern std::vector<I2CRunnable *> i2c_list;
 
-void pre_state_change(uint8_t * as, uint8_t * an);
+void pre_state_change(uint8_t *as, uint8_t *an);
+
 esc_cfg_t _config = {
     .user_arg = NULL,
     .use_interrupt = 1,
@@ -101,8 +94,17 @@ esc_cfg_t _config = {
     .esc_check_dc_handler = NULL,
 };
 
+
 uint32_t last_cycle_time = 0;
 uint16_t arg_recv_idx = 0;
+uint32_t task_load_time = 0;
+uint8_t pdi_irq_flag = 0;
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    last_cycle_time = HAL_GetTick();
+    pdi_irq_flag = 1;
+}
+
 void cb_get_inputs() {
     prepare_inputs();
 
@@ -112,7 +114,7 @@ void cb_get_inputs() {
         }
 
         arg_recv_idx = ((uint16_t) *(global_inputs + 1) << 8)
-                | *(global_inputs + (0));
+                       | *(global_inputs + (0));
         global_args[arg_recv_idx] = global_inputs[2];
     }
 
@@ -120,6 +122,7 @@ void cb_get_inputs() {
         HAL_NVIC_SystemReset();
     } else if (Obj.master_status == MASTER_READY) {
         task_load();
+        task_load_time = HAL_GetTick();
         HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_RESET);
         inited = 1;
         Obj.slave_status = SLAVE_CONFIRM_READY;
@@ -130,6 +133,7 @@ void cb_get_inputs() {
 
 uint32_t ts, last_ts;
 uint32_t ts2, last_ts2;
+
 void cb_set_outputs() {
     ts = HAL_GetTick();
     if (ts - last_ts >= 25) {
@@ -139,8 +143,8 @@ void cb_set_outputs() {
 
     // cuz this module don't require any initializing
     if (Obj.sdo_len == 0 && !inited) {
-		Obj.slave_status = SLAVE_READY;
-	}
+        Obj.slave_status = SLAVE_READY;
+    }
 
     if (Obj.master_status == MASTER_SENDING_ARGUMENTS && !inited) {
         if (arg_recv_idx != Obj.sdo_len) {
@@ -174,12 +178,15 @@ void soes_init() {
 
 extern uint8_t do_terminate;
 extern uint8_t terminated_app_count;
+
 void reset_soem_app() {
     do_terminate = 1;
-    for (CustomRunnable *runnable : task_list) {
+    for (CustomRunnable *runnable: task_list) {
         runnable->running = 0;
         runnable->exit();
     }
+    task_load_time = 0;
+    last_cycle_time = 0;
     memset(global_args, 0, 1024);
     memset(global_inputs, 0, 1024);
     memset(global_outputs, 0, 1024);
@@ -196,17 +203,11 @@ void reset_soem_app() {
     inited = 0;
 }
 
-void pre_state_change(uint8_t * as, uint8_t * an) {
+void pre_state_change(uint8_t *as, uint8_t *an) {
     uint8_t target = (*as >> 4) & 0x0F;
     if (target == ESCinit) {
         reset_soem_app();
     }
-}
-
-uint8_t pdi_irq_flag = 0;
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    last_cycle_time = HAL_GetTick();
-    pdi_irq_flag = 1;
 }
 
 void soes_task() {
@@ -214,25 +215,26 @@ void soes_task() {
     soes_init();
 
     while (true) {
+        // if (inited == 1 && HAL_GetTick() - last_cycle_time >= 1 && HAL_GetTick() - task_load_time < 1000) {
+        //     if (Obj.slave_status >= 249) {
+        //         Obj.slave_status = MASTER_READY + 2;
+        //     } else {
+        //         Obj.slave_status++;
+        //     }
+        //     pdi_irq_flag = 1;
+        // }
+        //
+        // // normal state
+        // if (pdi_irq_flag) {
+        //     ESC_read (ESCREG_LOCALTIME, (void *) &ESCvar.Time, sizeof (ESCvar.Time));
+        //     DIG_process (DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG | DIG_PROCESS_INPUTS_FLAG);
+        //     pdi_irq_flag = 0;
+        // } else {
+        //     ecat_slv_poll();
+        //     DIG_process(DIG_PROCESS_WD_FLAG);
+        // }
 
-        if (inited == 1 && HAL_GetTick() - last_cycle_time >= 10) {
-            if (Obj.slave_status >= 249) {
-                Obj.slave_status = MASTER_READY + 2;
-            } else {
-                Obj.slave_status++;
-            }
-            pdi_irq_flag = 1;
-        }
-
-        // normal state
-        if (pdi_irq_flag) {
-            ESC_read (ESCREG_LOCALTIME, (void *) &ESCvar.Time, sizeof (ESCvar.Time));
-            DIG_process (DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG | DIG_PROCESS_INPUTS_FLAG);
-            pdi_irq_flag = 0;
-        } else {
-            ecat_slv_poll();
-            DIG_process(DIG_PROCESS_WD_FLAG);
-        }
+        ecat_slv();
 
         // waiting state
         if (inited == 0) {

@@ -13,4 +13,6 @@ void call_uart_send_by_dma(UART_HandleTypeDef *huart, uint8_t *buf, uint16_t Siz
 
 void init_uart_buf();
 
+void reset_usart1();
+
 #endif //UART_PROCESSOR_H

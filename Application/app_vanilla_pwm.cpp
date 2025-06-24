@@ -26,16 +26,16 @@ App_Vanilla_PWM::App_Vanilla_PWM(uint8_t *args, int *offset) {
 
     double min_error = DBL_MAX;
     for (uint32_t psc = 0; psc <= 0xFFFF; ++psc) {
-        double temp_arr = ((double)expected_period * TIM_FREQ / 1000000.0) / (psc + 1) - 1.0;
+        double temp_arr = ((double) expected_period * TIM_FREQ / 1000000.0) / (psc + 1) - 1.0;
         if (temp_arr < 0 || temp_arr > 65535)
             continue;
-        uint32_t arr = (uint32_t)(temp_arr + 0.5);
-        double actual_period = ((double)(psc + 1) * (arr + 1)) * 1000000.0 / TIM_FREQ;
+        double arr = (double) (temp_arr + 0.5);
+        double actual_period = ((double) (psc + 1) * (arr + 1)) * 1000000.0 / TIM_FREQ;
         double error = fabs(actual_period - expected_period);
         if (error < min_error) {
             min_error = error;
-            best_psc = (uint16_t)psc;
-            best_arr = (uint16_t)arr;
+            best_psc = (uint16_t) psc;
+            best_arr = (uint16_t) arr;
         }
         if (error < 1e-6)
             break;
@@ -45,22 +45,30 @@ App_Vanilla_PWM::App_Vanilla_PWM(uint8_t *args, int *offset) {
 
     __HAL_TIM_SET_PRESCALER(tim_inst, best_psc);
     __HAL_TIM_SET_AUTORELOAD(tim_inst, best_arr);
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_1, calc_compare(init_value));
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_2, calc_compare(init_value));
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_3, calc_compare(init_value));
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_4, calc_compare(init_value));
-
-    HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_1);
-    HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_2);
-    HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_3);
-    HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_4);
+    cmd[0] = calc_compare(init_value);
+    cmd[1] = calc_compare(init_value);
+    cmd[2] = calc_compare(init_value);
+    cmd[3] = calc_compare(init_value);
 }
 
 void App_Vanilla_PWM::collect_inputs(uint8_t *input, int *input_offset) {
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_1, calc_compare(read_uint16(input, input_offset)));
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_2, calc_compare(read_uint16(input, input_offset)));
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_3, calc_compare(read_uint16(input, input_offset)));
-    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_4, calc_compare(read_uint16(input, input_offset)));
+    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_1, cmd[0]);
+    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_2, cmd[1]);
+    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_3, cmd[2]);
+    __HAL_TIM_SET_COMPARE(tim_inst, TIM_CHANNEL_4, cmd[3]);
+
+    if (tim_started == 0) {
+        tim_started = 1;
+        HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_2);
+        HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_3);
+        HAL_TIM_PWM_Start(tim_inst, TIM_CHANNEL_4);
+    }
+
+    cmd[0] = calc_compare(read_uint16(input, input_offset));
+    cmd[1] = calc_compare(read_uint16(input, input_offset));
+    cmd[2] = calc_compare(read_uint16(input, input_offset));
+    cmd[3] = calc_compare(read_uint16(input, input_offset));
 }
 
 void App_Vanilla_PWM::exit() {
@@ -77,5 +85,5 @@ void App_Vanilla_PWM::exit() {
 }
 
 uint32_t App_Vanilla_PWM::calc_compare(uint16_t expected_high_pulse) const {
-    return (((double) expected_high_pulse) / ((double) this->expected_period)) * this->best_arr;
+    return (uint32_t) ((((double) expected_high_pulse) / ((double) this->expected_period)) * this->best_arr + 0.5);
 }

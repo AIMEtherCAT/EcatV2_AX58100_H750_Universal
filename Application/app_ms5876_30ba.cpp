@@ -249,6 +249,7 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
             current_stage = WAITING;
             send_called = 0;
             last_act_ts = HAL_GetTick();
+            inited = 1;
             break;
         }
         case READING_D1: {
@@ -266,15 +267,21 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
             last_act_ts = HAL_GetTick();
 
             dT = (int32_t) D2_Digital_temperature_value - (int32_t) C5_Reference_temperature * 256;
-            TEMP = (int64_t) 2000 + (int64_t) dT * (int64_t) C6_Temperature_coefficient_of_the_temperature / (int64_t) 8388608;
-            OFF = (int64_t) C2_Pressure_offset * 65536 + ((int64_t) C4_Temperature_coefficient_of_pressure_offset * (int64_t) dT) / (int64_t) 128;
-            SENS = (int64_t) C1_Pressure_sensitivity * 32768 + ((int64_t) C3_Temperature_coefficient_of_pressure_sensitivity * (int64_t) dT) / (int64_t) 256;
-            P = (int64_t) ((int64_t) D1_Digital_pressure_value * (int64_t) SENS / (int64_t) 2097152 - (int64_t) OFF) / (int64_t) 8192;
+            TEMP = (int64_t) 2000 + (int64_t) dT * (int64_t) C6_Temperature_coefficient_of_the_temperature / (int64_t)
+                   8388608;
+            OFF = (int64_t) C2_Pressure_offset * 65536 + (
+                      (int64_t) C4_Temperature_coefficient_of_pressure_offset * (int64_t) dT) / (int64_t) 128;
+            SENS = (int64_t) C1_Pressure_sensitivity * 32768 + (
+                       (int64_t) C3_Temperature_coefficient_of_pressure_sensitivity * (int64_t) dT) / (int64_t) 256;
+            P = (int64_t) ((int64_t) D1_Digital_pressure_value * (int64_t) SENS / (int64_t) 2097152 - (int64_t) OFF) / (
+                    int64_t) 8192;
 
             if (TEMP / 100 < 20) {
                 Ti = (int64_t) 3 * (int64_t) dT * (int64_t) dT / (int64_t) 8589934592;
-                OFFi = (int64_t) 3 * ((int64_t) TEMP - (int64_t) 2000) * ((int64_t) TEMP - (int64_t) 2000) / (int64_t) 2;
-                SENSi = (int64_t) 5 * ((int64_t) TEMP - (int64_t) 2000) * ((int64_t) TEMP - (int64_t) 2000) / (int64_t) 8;
+                OFFi = (int64_t) 3 * ((int64_t) TEMP - (int64_t) 2000) * ((int64_t) TEMP - (int64_t) 2000) / (int64_t)
+                       2;
+                SENSi = (int64_t) 5 * ((int64_t) TEMP - (int64_t) 2000) * ((int64_t) TEMP - (int64_t) 2000) / (int64_t)
+                        8;
 
                 if (TEMP / 100 < -15) {
                     OFFi = OFFi + (int64_t) 7 * ((int64_t) TEMP + (int64_t) 1500) * ((int64_t) TEMP + (int64_t) 1500);
@@ -293,6 +300,7 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
             TEMP2 = (TEMP - Ti);
             // mbar / 10
             P2 = (((D1_Digital_pressure_value * SENS2) / 2097152 - OFF2) / 8192);
+            last_recv_time = HAL_GetTick();
             break;
         }
     }
@@ -301,6 +309,15 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
 void App_MS5837_30BA::collect_outputs(uint8_t *output, int *output_offset) {
     write_int32(TEMP2, output, output_offset);
     write_int32(P2, output, output_offset);
+    if (HAL_GetTick() - last_recv_time > adc_wait_time * 4 && inited == 1 && HAL_GetTick() - last_rst_time >
+        adc_wait_time * 4) {
+        recv_called = 0;
+        send_called = 0;
+        tx_finished = 1;
+        current_stage = WAITING;
+        reset_i2c_ready();
+        last_rst_time = HAL_GetTick();
+    }
 }
 
 void App_MS5837_30BA::exit() {

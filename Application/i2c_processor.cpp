@@ -18,9 +18,13 @@ uint8_t i2c3_ready = 1;
 DMA_BUFFER uint8_t i2c3_buf[512];
 DMA_BUFFER uint8_t i2c3_send_buf[512];
 
+void reset_i2c_ready() {
+    i2c3_ready = 1;
+}
+
 void init_i2c_buf() {
-memset(i2c3_buf, 0, 512);
-memset(i2c3_send_buf, 0, 512);
+    memset(i2c3_buf, 0, 512);
+    memset(i2c3_send_buf, 0, 512);
 }
 
 void call_i2c_recv_dma(I2C_HandleTypeDef *hi2c, uint16_t addr, uint16_t Size) {
