@@ -55,7 +55,7 @@ void App_External_PWM::collect_inputs(uint8_t *input, int *input_offset) {
     }
     memcpy(buf, &cmd, 37);
     append_CRC16_check_sum(buf, 37);
-    if (HAL_GetTick() - last_tx_ts > 10 && HAL_GetTick() - last_rst_ts < 100) {
+    if (HAL_GetTick() - last_tx_ts > 5 && HAL_GetTick() - last_rst_ts < 10) {
         last_rst_ts = HAL_GetTick();
         reset_usart1();
     }

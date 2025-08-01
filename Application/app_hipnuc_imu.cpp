@@ -13,7 +13,8 @@ extern "C" {
 
 App_HIPNUC_IMU::App_HIPNUC_IMU(uint8_t *args, int *offset) {
     this->can_inst = &hfdcan2;
-    init_can2();
+    this->can_id_type = FDCAN_STANDARD_ID;
+    init_can();
     memset(imu_buf, 0, sizeof(imu_buf));
 }
 
@@ -42,5 +43,5 @@ void App_HIPNUC_IMU::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data
 }
 
 void App_HIPNUC_IMU::exit() {
-    deinit_can2();
+    deinit_can();
 }

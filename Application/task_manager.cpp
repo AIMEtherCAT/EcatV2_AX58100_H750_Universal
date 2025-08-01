@@ -10,6 +10,10 @@
 #include "task_defs.h"
 #include "IOUtils.h"
 
+extern "C" {
+#include "main.h"
+}
+
 std::vector<CustomRunnable *> task_list;
 std::vector<CanRunnable *> can_list;
 std::vector<UartRunnable *> uart_list;
@@ -128,6 +132,69 @@ void task_load() {
                 i2c_list.push_back(app);
                 break;
             }
+            case ADC_APP_ID: {
+                App_ADC *app = new App_ADC(global_args, &offset);
+                task_list.push_back(app);
+                break;
+            }
+            case CAN_PMU_APP_ID: {
+                App_CAN_PMU *app = new App_CAN_PMU(global_args, &offset);
+                task_list.push_back(app);
+                can_list.push_back(app);
+                break;
+            }
+            case DJICAN_APP_ID: {
+                App_DJIMotor *app = new App_DJIMotor(global_args, &offset);
+                task_list.push_back(app);
+                can_list.push_back(app);
+                runnable_conf *conf = new runnable_conf();
+                conf->runnable = app;
+                conf->period = app->period;
+                run_confs.push_back(conf);
+
+                const osThreadDef_t task = {
+                    nullptr, (soes_device_handle),
+                    (osPriorityRealtime), (0), (512),
+                    NULL,
+                    NULL
+                };
+                taskDefs.push_back(&task);
+                taskHandles.push_back(
+                    osThreadCreate(taskDefs.back(), run_confs.back()));
+                break;
+            }
         }
+    }
+}
+
+uint8_t do_task_load = 0;
+uint8_t task_loaded = 0;
+uint32_t ts3, last_ts3;
+uint32_t within = 0;
+
+void soes_task_loader() {
+    while (1) {
+        if (HAL_GetTick() - within <= 250) {
+            ts3 = HAL_GetTick();
+            if (ts3 - last_ts3 >= 25) {
+                HAL_GPIO_TogglePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin);
+                last_ts3 = ts3;
+            }
+        } else {
+            HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_SET);
+        }
+
+
+        if (do_task_load == 1 && task_loaded == 0) {
+            within = HAL_GetTick();
+
+            taskENTER_CRITICAL();
+            task_load();
+            taskEXIT_CRITICAL();
+
+            task_loaded = 1;
+        }
+
+        vTaskDelay(5);
     }
 }

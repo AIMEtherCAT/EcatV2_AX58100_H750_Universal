@@ -24,3 +24,7 @@ float processButterworthLowpass(ButterworthLowpass *filter, float input) {
     filter->prevOutput = output;
     return output;
 }
+
+float lowpass_filter(float prev, float current, float alpha) {
+    return alpha * current + (1.0f - alpha) * prev;
+}

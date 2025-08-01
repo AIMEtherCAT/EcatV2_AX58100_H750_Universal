@@ -250,6 +250,7 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
             send_called = 0;
             last_act_ts = HAL_GetTick();
             inited = 1;
+            last_recv_time = HAL_GetTick();
             break;
         }
         case READING_D1: {
@@ -297,10 +298,18 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
             SENS2 = SENS - SENSi;
 
             // degc / 100
-            TEMP2 = (TEMP - Ti);
+            _TEMP2 = (TEMP - Ti);
             // mbar / 10
-            P2 = (((D1_Digital_pressure_value * SENS2) / 2097152 - OFF2) / 8192);
+            _P2 = (((D1_Digital_pressure_value * SENS2) / 2097152 - OFF2) / 8192);
+
+            if (_TEMP2 > -30 * 100) {
+                TEMP2 = _TEMP2;
+            }
+            if (_P2 > 800 * 10) {
+                P2 = _P2;
+            }
             last_recv_time = HAL_GetTick();
+            err_times = 0;
             break;
         }
     }
@@ -309,14 +318,43 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
 void App_MS5837_30BA::collect_outputs(uint8_t *output, int *output_offset) {
     write_int32(TEMP2, output, output_offset);
     write_int32(P2, output, output_offset);
-    if (HAL_GetTick() - last_recv_time > adc_wait_time * 4 && inited == 1 && HAL_GetTick() - last_rst_time >
-        adc_wait_time * 4) {
+
+    // 已初始化并且离线时间大于100ms 认为设备离线 进入initializing状态
+    if (HAL_GetTick() - last_recv_time > 100 && inited == 1 && err_times >= 100) {
+        inited = 0;
         recv_called = 0;
         send_called = 0;
-        tx_finished = 1;
-        current_stage = WAITING;
+        tx_finished = 0;
+        reset_i2c_ready();
+        current_stage = INITIALIZING;
+        err_times = 0;
+        return;
+    }
+
+    if (HAL_GetTick() - last_act_ts > 200 && current_stage == READING_C1) {
+        inited = 0;
+        recv_called = 0;
+        send_called = 0;
+        tx_finished = 0;
+        reset_i2c_ready();
+        current_stage = INITIALIZING;
+        return;
+    }
+
+    // 已初始化并且离线时间大于8倍adc时间 认为接触不良但是设备设备没有掉电
+    // 重置i2c后进入waiting状态
+    if (HAL_GetTick() - last_recv_time > adc_wait_time * 8 &&
+        (current_stage == READING_D1 || current_stage == READING_D2) &&
+        inited == 1 &&
+        HAL_GetTick() - last_rst_time > adc_wait_time * 8) {
+        recv_called = 0;
+        send_called = 0;
+        tx_finished = 0;
         reset_i2c_ready();
         last_rst_time = HAL_GetTick();
+        current_stage = WAITING;
+        err_times++;
+        return;
     }
 }
 

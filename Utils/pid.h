@@ -46,6 +46,9 @@ extern "C" {
 
 extern void PID_init(pid_type_def *pid, const double PID[3], double max_out, double max_iout);
 
+void PID_init_raw(pid_type_def *pid, double p, double i, double d, double max_out,
+        double max_iout);
+
 
 
 /**

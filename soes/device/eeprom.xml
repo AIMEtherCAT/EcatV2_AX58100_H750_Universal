@@ -12,7 +12,7 @@
     </Groups>
     <Devices>
       <Device Physics="YY">
-        <Type ProductCode="#x01" RevisionNo="0">58100_H750_FlightModule</Type>
+        <Type ProductCode="#x03" RevisionNo="0">58100_H750_UniversalModule</Type>
         <Name LcId="1033">rm</Name>
         <Info>
           <IdentificationReg134>false</IdentificationReg134>
@@ -261,7 +261,7 @@
               </DataType>
               <DataType>
                 <Name>DT1A01</Name>
-                <BitSize>176</BitSize>
+                <BitSize>336</BitSize>
                 <SubItem>
                   <SubIdx>0</SubIdx>
                   <Name>Max SubIndex</Name>
@@ -323,6 +323,61 @@
                   <Type>UDINT</Type>
                   <BitSize>32</BitSize>
                   <BitOffs>144</BitOffs>
+                  <Flags>
+                    <Access>ro</Access>
+                    <Backup>0</Backup>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>6</SubIdx>
+                  <Name>s2m6</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>176</BitOffs>
+                  <Flags>
+                    <Access>ro</Access>
+                    <Backup>0</Backup>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>7</SubIdx>
+                  <Name>s2m7</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>208</BitOffs>
+                  <Flags>
+                    <Access>ro</Access>
+                    <Backup>0</Backup>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>8</SubIdx>
+                  <Name>s2m8</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>240</BitOffs>
+                  <Flags>
+                    <Access>ro</Access>
+                    <Backup>0</Backup>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>9</SubIdx>
+                  <Name>s2m9</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>272</BitOffs>
+                  <Flags>
+                    <Access>ro</Access>
+                    <Backup>0</Backup>
+                  </Flags>
+                </SubItem>
+                <SubItem>
+                  <SubIdx>10</SubIdx>
+                  <Name>s2m10</Name>
+                  <Type>UDINT</Type>
+                  <BitSize>32</BitSize>
+                  <BitOffs>304</BitOffs>
                   <Flags>
                     <Access>ro</Access>
                     <Backup>0</Backup>
@@ -485,7 +540,7 @@
                   <BitSize>32</BitSize>
                   <BitOffs>80</BitOffs>
                   <Flags>
-                    <Access>ro</Access>
+                    <Access>rw</Access>
                     <Backup>0</Backup>
                   </Flags>
                 </SubItem>
@@ -555,7 +610,7 @@
                   <BitSize>32</BitSize>
                   <BitOffs>80</BitOffs>
                   <Flags>
-                    <Access>ro</Access>
+                    <Access>rw</Access>
                     <Backup>0</Backup>
                   </Flags>
                 </SubItem>
@@ -574,15 +629,15 @@
               <DataType>
                 <Name>DT6001ARR</Name>
                 <BaseType>ULINT</BaseType>
-                <BitSize>320</BitSize>
+                <BitSize>640</BitSize>
                 <ArrayInfo>
                   <LBound>1</LBound>
-                  <Elements>5</Elements>
+                  <Elements>10</Elements>
                 </ArrayInfo>
               </DataType>
               <DataType>
                 <Name>DT6001</Name>
-                <BitSize>336</BitSize>
+                <BitSize>656</BitSize>
                 <SubItem>
                   <SubIdx>0</SubIdx>
                   <Name>Max SubIndex</Name>
@@ -597,7 +652,7 @@
                 <SubItem>
                   <Name>Elements</Name>
                   <Type>DT6001ARR</Type>
-                  <BitSize>320</BitSize>
+                  <BitSize>640</BitSize>
                   <BitOffs>16</BitOffs>
                   <Flags>
                     <Access>ro</Access>
@@ -650,10 +705,6 @@
                 <BitSize>24</BitSize>
               </DataType>
               <DataType>
-                <Name>STRING(23)</Name>
-                <BitSize>184</BitSize>
-              </DataType>
-              <DataType>
                 <Name>UDINT</Name>
                 <BitSize>32</BitSize>
               </DataType>
@@ -664,6 +715,10 @@
               <DataType>
                 <Name>USINT</Name>
                 <BitSize>8</BitSize>
+              </DataType>
+              <DataType>
+                <Name>STRING(26)</Name>
+                <BitSize>208</BitSize>
               </DataType>
             </DataTypes>
             <Objects>
@@ -684,10 +739,10 @@
               <Object>
                 <Index>#x1008</Index>
                 <Name>Manufacturer Device Name</Name>
-                <Type>STRING(23)</Type>
-                <BitSize>184</BitSize>
+                <Type>STRING(26)</Type>
+                <BitSize>208</BitSize>
                 <Info>
-                  <DefaultString>58100_H750_FlightModule</DefaultString>
+                  <DefaultString>58100_H750_UniversalModule</DefaultString>
                 </Info>
                 <Flags>
                   <Access>ro</Access>
@@ -742,7 +797,7 @@
                   <SubItem>
                     <Name>Product Code</Name>
                     <Info>
-                      <DefaultValue>#x01</DefaultValue>
+                      <DefaultValue>#x03</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -893,12 +948,12 @@
                 <Index>#x1A01</Index>
                 <Name>slave2master</Name>
                 <Type>DT1A01</Type>
-                <BitSize>176</BitSize>
+                <BitSize>336</BitSize>
                 <Info>
                   <SubItem>
                     <Name>Max SubIndex</Name>
                     <Info>
-                      <DefaultValue>5</DefaultValue>
+                      <DefaultValue>10</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -929,6 +984,36 @@
                     <Name>s2m5</Name>
                     <Info>
                       <DefaultValue>#x60010540</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m6</Name>
+                    <Info>
+                      <DefaultValue>#x60010640</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m7</Name>
+                    <Info>
+                      <DefaultValue>#x60010740</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m8</Name>
+                    <Info>
+                      <DefaultValue>#x60010840</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m9</Name>
+                    <Info>
+                      <DefaultValue>#x60010940</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m10</Name>
+                    <Info>
+                      <DefaultValue>#x60010A40</DefaultValue>
                     </Info>
                   </SubItem>
                 </Info>
@@ -1072,7 +1157,7 @@
                   <SubItem>
                     <Name>Minimum Cycle Time</Name>
                     <Info>
-                      <DefaultValue>6000</DefaultValue>
+                      <DefaultValue>7000</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -1120,7 +1205,7 @@
                   <SubItem>
                     <Name>Minimum Cycle Time</Name>
                     <Info>
-                      <DefaultValue>6000</DefaultValue>
+                      <DefaultValue>7000</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -1153,12 +1238,12 @@
                 <Index>#x6001</Index>
                 <Name>slave2master</Name>
                 <Type>DT6001</Type>
-                <BitSize>336</BitSize>
+                <BitSize>656</BitSize>
                 <Info>
                   <SubItem>
                     <Name>Max SubIndex</Name>
                     <Info>
-                      <DefaultValue>5</DefaultValue>
+                      <DefaultValue>10</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -1187,6 +1272,36 @@
                   </SubItem>
                   <SubItem>
                     <Name>s2m5</Name>
+                    <Info>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m6</Name>
+                    <Info>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m7</Name>
+                    <Info>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m8</Name>
+                    <Info>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m9</Name>
+                    <Info>
+                      <DefaultValue>0</DefaultValue>
+                    </Info>
+                  </SubItem>
+                  <SubItem>
+                    <Name>s2m10</Name>
                     <Info>
                       <DefaultValue>0</DefaultValue>
                     </Info>
@@ -1445,6 +1560,41 @@
             <SubIndex>#x5</SubIndex>
             <BitLen>64</BitLen>
             <Name>s2m5</Name>
+            <DataType>ULINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>#x6</SubIndex>
+            <BitLen>64</BitLen>
+            <Name>s2m6</Name>
+            <DataType>ULINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>#x7</SubIndex>
+            <BitLen>64</BitLen>
+            <Name>s2m7</Name>
+            <DataType>ULINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>#x8</SubIndex>
+            <BitLen>64</BitLen>
+            <Name>s2m8</Name>
+            <DataType>ULINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>#x9</SubIndex>
+            <BitLen>64</BitLen>
+            <Name>s2m9</Name>
+            <DataType>ULINT</DataType>
+          </Entry>
+          <Entry>
+            <Index>#x6001</Index>
+            <SubIndex>#xa</SubIndex>
+            <BitLen>64</BitLen>
+            <Name>s2m10</Name>
             <DataType>ULINT</DataType>
           </Entry>
         </TxPdo>

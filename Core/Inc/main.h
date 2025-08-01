@@ -63,6 +63,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
+#define VOLTAGE_Pin GPIO_PIN_0
+#define VOLTAGE_GPIO_Port GPIOC
+#define CURRENT_Pin GPIO_PIN_5
+#define CURRENT_GPIO_Port GPIOC
 #define ETHERCAT_NS_Pin GPIO_PIN_11
 #define ETHERCAT_NS_GPIO_Port GPIOE
 #define LED_LBOARD_1_Pin GPIO_PIN_10

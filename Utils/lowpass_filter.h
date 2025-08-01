@@ -15,4 +15,6 @@ void initButterworthLowpass(ButterworthLowpass *filter, float cutoffFreq, float 
 
 float processButterworthLowpass(ButterworthLowpass *filter, float input);
 
+float lowpass_filter(float prev, float current, float alpha);
+
 #endif //SENTINEL_GIMBAL_MAIN_LOWPASS_FILTER_H

@@ -51,6 +51,33 @@ void PID_init(pid_type_def *pid, const double PID[3], double max_out, double max
     pid->DOut = 0.0f;
 }
 
+void PID_init_raw(pid_type_def *pid, double p, double i, double d, double max_out,
+        double max_iout) {
+    if (pid == NULL) {
+        return;
+    }
+    pid->Kp = p;
+    pid->Ki = i;
+    pid->Kd = d;
+    pid->OutMax = max_out;
+    pid->IMax = max_iout;
+
+    pid->SetPoint = 0.0f;
+    pid->SetPointLast = 0.0f;
+    pid->deadband = 0.0f;
+
+    pid->LastError = 0.0f;
+    pid->PreError = 0.0f;
+    pid->SumError = 0.0f;
+    pid->dError = 0.0f;
+
+    pid->ErrorMax = 9999999.0f;
+
+    pid->POut = 0.0f;
+    pid->IOut = 0.0f;
+    pid->DOut = 0.0f;
+}
+
 float pid_abs(float value) {
     return value >= 0 ? value : -value;
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Slave xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="com.rtlabs.emf.esx" fileVersion="3" id="58100_H750_FlightModule" productCode="0x01">
+<Slave xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="com.rtlabs.emf.esx" fileVersion="3" id="58100_H750_UniversalModule" productCode="0x03">
   <Name>rm</Name>
   <Vendor>
     <Id>0</Id>
@@ -47,8 +47,8 @@
       <Index>0x1008</Index>
       <Name>Manufacturer Device Name</Name>
       <DataType>VISIBLE_STRING</DataType>
-      <DefaultValue>58100_H750_FlightModule</DefaultValue>
-      <Length>23</Length>
+      <DefaultValue>58100_H750_UniversalModule</DefaultValue>
+      <Length>26</Length>
     </Item>
     <Item>
       <Index>0x1009</Index>
@@ -84,7 +84,7 @@
         <Index>0x02</Index>
         <Name>Product Code</Name>
         <DataType>UNSIGNED32</DataType>
-        <DefaultValue>0x01</DefaultValue>
+        <DefaultValue>0x03</DefaultValue>
       </SubItem>
       <SubItem>
         <Index>0x03</Index>
@@ -813,7 +813,7 @@
     <Index>0x6001</Index>
     <Name>slave2master</Name>
     <Type>UNSIGNED64</Type>
-    <Length>5</Length>
+    <Length>10</Length>
     <PdoMapping>TX</PdoMapping>
     <ObjectType>ARRAY</ObjectType>
     <Member>
@@ -848,6 +848,41 @@
       <Index>0x05</Index>
       <Access>RO</Access>
       <Name>s2m5</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x06</Index>
+      <Access>RO</Access>
+      <Name>s2m6</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x07</Index>
+      <Access>RO</Access>
+      <Name>s2m7</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x08</Index>
+      <Access>RO</Access>
+      <Name>s2m8</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x09</Index>
+      <Access>RO</Access>
+      <Name>s2m9</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x0A</Index>
+      <Access>RO</Access>
+      <Name>s2m10</Name>
       <Type>UNSIGNED64</Type>
       <PdoMapping>TX</PdoMapping>
     </Member>
@@ -975,9 +1010,10 @@
     </Member>
     <Member>
       <Index>0x05</Index>
+      <Access>RW</Access>
       <Name>Minimum Cycle Time</Name>
       <Type>UNSIGNED32</Type>
-      <DefaultValue>6000</DefaultValue>
+      <DefaultValue>7000</DefaultValue>
       <PdoMapping>NONE</PdoMapping>
     </Member>
     <Member>
@@ -1017,9 +1053,10 @@
     </Member>
     <Member>
       <Index>0x05</Index>
+      <Access>RW</Access>
       <Name>Minimum Cycle Time</Name>
       <Type>UNSIGNED32</Type>
-      <DefaultValue>6000</DefaultValue>
+      <DefaultValue>7000</DefaultValue>
       <PdoMapping>NONE</PdoMapping>
     </Member>
     <Member>

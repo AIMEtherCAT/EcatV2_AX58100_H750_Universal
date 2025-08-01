@@ -6,7 +6,7 @@
 
 #include <cstring>
 #include <vector>
-#include "task_manager.h"
+#include "task_defs.h"
 
 extern "C" {
 #include "usart.h"

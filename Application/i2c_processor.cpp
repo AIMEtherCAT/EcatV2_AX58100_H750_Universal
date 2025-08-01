@@ -20,6 +20,17 @@ DMA_BUFFER uint8_t i2c3_send_buf[512];
 
 void reset_i2c_ready() {
     i2c3_ready = 1;
+
+    __HAL_DMA_DISABLE(hi2c3.hdmatx);
+    __HAL_DMA_DISABLE(hi2c3.hdmarx);
+
+
+    hi2c3.State = HAL_I2C_STATE_READY;
+    hi2c3.Mode = HAL_I2C_MODE_NONE;
+    hi2c3.ErrorCode = HAL_I2C_ERROR_NONE;
+
+    HAL_DMA_Abort(hi2c3.hdmatx);
+    HAL_DMA_Abort(hi2c3.hdmarx);
 }
 
 void init_i2c_buf() {

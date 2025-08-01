@@ -5,11 +5,85 @@
 #ifndef TASK_DEFS_H
 #define TASK_DEFS_H
 
+#include "pid.h"
 #include "task_manager.h"
+
+#define DJIRC_APP_ID 1
+#define LK_APP_ID 2
+#define HIPNUC_IMU_CAN_APP_ID 3
+#define DSHOT_APP_ID 4
+#define DJICAN_APP_ID 5
+#define VANILLA_PWM_APP_ID 6
+#define EXTERNAL_PWM_APP_ID 7
+#define MS5876_30BA_APP_ID 8
+#define ADC_APP_ID 9
+#define CAN_PMU_APP_ID 10
 
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+class CustomRunnable {
+public:
+    virtual ~CustomRunnable() = default;
+
+    // unit: ms
+    uint16_t period{};
+
+    uint8_t task_type{};
+
+    uint8_t running{};
+
+    virtual void run_task();
+
+    virtual void collect_outputs(uint8_t *output, int *output_offset);
+
+    virtual void collect_inputs(uint8_t *input, int *input_offset);
+
+    virtual void exit();
+};
+
+class CanRunnable : public virtual CustomRunnable {
+public:
+    ~CanRunnable() override = default;
+
+    FDCAN_HandleTypeDef *can_inst{};
+
+    uint32_t can_id_type{};
+
+    virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
+};
+
+class UartRunnable : public virtual CustomRunnable {
+public:
+    ~UartRunnable() override = default;
+
+    UART_HandleTypeDef *uart_inst{};
+
+    virtual void uart_recv(uint16_t size, uint8_t *rx_data);
+
+    virtual void uart_recv_err();
+
+    virtual void uart_dma_tx_finished_callback();
+};
+
+class I2CRunnable : public virtual CustomRunnable {
+public:
+    ~I2CRunnable() override = default;
+
+    I2C_HandleTypeDef *i2c_inst{};
+
+    virtual void i2c_recv(uint8_t *rx_data);
+
+    virtual void i2c_recv_err();
+
+    virtual void i2c_dma_tx_finished_callback();
+};
+
+typedef struct {
+    CustomRunnable *runnable;
+    uint16_t period;
+} runnable_conf;
 
 #define RC_CHANNAL_ERROR_VALUE 1700
 
@@ -110,6 +184,19 @@ private:
     servo_cmd_t cmd{};
 };
 
+class App_ADC : public CustomRunnable {
+public:
+    App_ADC(uint8_t *args, int *offset);
+
+    void collect_outputs(uint8_t *input, int *input_offset) override;
+
+    void exit() override;
+
+private:
+    float parsed_adc_value[2]{};
+    float coefficient[2]{};
+};
+
 #define MS5837_D1_OSR256_CMD 0x40
 #define MS5837_D1_OSR512_CMD 0x42
 #define MS5837_D1_OSR1024_CMD 0x44
@@ -172,6 +259,8 @@ private:
         WAITING,
     } current_stage{};
 
+    uint8_t err_times{};
+
     uint32_t last_act_ts{};
     uint8_t send_called{};
     uint8_t recv_called{};
@@ -204,7 +293,106 @@ private:
 
     float TEMP2{};
     float P2{};
+
+    float _TEMP2{};
+    float _P2{};
 };
+
+#define UAVCAN_BUF_SIZE 64
+#define UAVCAN_TID_TIMEOUT_MS 1000
+
+typedef struct {
+    uint8_t buffer[UAVCAN_BUF_SIZE];
+    uint16_t len;
+    uint16_t crc;
+    uint8_t initialized;
+    uint8_t toggle;
+    uint8_t transfer_id;
+    uint32_t last_ts;
+} UAVCAN_RxState_t;
+
+typedef struct {
+    uint8_t start;
+    uint8_t end;
+    uint8_t toggle;
+    uint8_t tid;
+} UAVCAN_TailByte_t;
+
+class App_CAN_PMU : public CanRunnable {
+public:
+    App_CAN_PMU(uint8_t *args, int *offset);
+
+    void collect_inputs(uint8_t *input, int *input_offset) override;
+
+    void collect_outputs(uint8_t *input, int *input_offset) override;
+
+    void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+    void exit() override;
+
+private:
+    UAVCAN_RxState_t uavcan_rx{};
+
+    static UAVCAN_TailByte_t parse_tail_byte(uint8_t tail) {
+        UAVCAN_TailByte_t t;
+        t.start = (tail >> 7) & 1;
+        t.end = (tail >> 6) & 1;
+        t.toggle = (tail >> 5) & 1;
+        t.tid = tail & 0x1F;
+        return t;
+    }
+
+    uint8_t pmu_buffer[6]{};
+    uint8_t node_status_data[8]{};
+    FDCAN_TxHeaderTypeDef can_tx_header{};
+    uint32_t last_node_status_pub_ts{};
+    uint32_t uptime{};
+    uint8_t transfer_id{};
+};
+
+typedef struct {
+    uint16_t ecd;
+    int16_t rpm;
+    int16_t current;
+    uint8_t temperature;
+} dji_motor_status_t;
+
+typedef enum {
+    OPENLOOP_CURRENT = 0x01, SPEED = 0x02, SINGLE_ROUND_POSITION = 0x03
+} dji_ctrl_mode_e;
+
+class App_DJIMotor : public CanRunnable {
+public:
+    App_DJIMotor(uint8_t *args, int *offset);
+
+    void collect_inputs(uint8_t *input, int *input_offset) override;
+
+    void collect_outputs(uint8_t *input, int *input_offset) override;
+
+    void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+    void exit() override;
+
+    void run_task() override;
+
+private:
+    FDCAN_TxHeaderTypeDef shared_tx_header{};
+    uint8_t shared_tx_data[8]{};
+    dji_motor_status_t motor_status[4]{};
+    uint32_t can_motor_report_packet_id[4]{};
+    uint32_t can_packet_id{};
+    uint8_t can_inst_id{};
+    dji_ctrl_mode_e ctrl_mode[4]{};
+    uint8_t cmd_motor_enable[4]{};
+    int16_t cmd[4]{};
+    pid_type_def speed_pid[4]{};
+    pid_type_def angle_pid[4]{};
+
+    void disable_motor();
+
+    static int16_t calc_err(int16_t current_angle, int16_t target_angle);
+};
+
 #ifdef __cplusplus
 }
 #endif

@@ -5,13 +5,15 @@
 #include <vector>
 #include "cmsis_os.h"
 #include "CRC8_CRC16.h"
+
 #include "i2c_processor.h"
 #include "task_defs.h"
-#include "usart.h"
 
 extern "C" {
 #include "ecat_slv.h"
 #include "device_conf.h"
+#include "fdcan.h"
+#include "usart.h"
 }
 
 #include "soes_application.h"
@@ -31,7 +33,7 @@ void prepare_inputs() {
 }
 
 void prepare_outputs() {
-    memcpy((uint8_t *) Obj.slave2master, &global_outputs, 8 + 8 + 5 + 19);
+    memcpy((uint8_t *) Obj.slave2master, &global_outputs, 80);
 }
 
 void ESC_interrupt_enable(uint32_t mask) {
@@ -105,6 +107,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
     pdi_irq_flag = 1;
 }
 
+extern uint8_t do_task_load;
+extern uint8_t task_loaded;
+
 void cb_get_inputs() {
     prepare_inputs();
 
@@ -121,11 +126,14 @@ void cb_get_inputs() {
     if (Obj.master_status == MASTER_REQUEST_REBOOT) {
         HAL_NVIC_SystemReset();
     } else if (Obj.master_status == MASTER_READY) {
-        task_load();
-        task_load_time = HAL_GetTick();
-        HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_RESET);
-        inited = 1;
-        Obj.slave_status = SLAVE_CONFIRM_READY;
+        if (task_loaded == 0) {
+            do_task_load = 1;
+        } else {
+            task_load_time = HAL_GetTick();
+            HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_RESET);
+            inited = 1;
+            Obj.slave_status = SLAVE_CONFIRM_READY;
+        }
     } else if (Obj.master_status > MASTER_READY) {
         task_spin();
     }
@@ -185,6 +193,8 @@ void reset_soem_app() {
         runnable->running = 0;
         runnable->exit();
     }
+    do_task_load = 0;
+    task_loaded = 0;
     task_load_time = 0;
     last_cycle_time = 0;
     memset(global_args, 0, 1024);
@@ -201,6 +211,7 @@ void reset_soem_app() {
     Obj.slave_status = SLAVE_INITIALIZING;
     HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_SET);
     inited = 0;
+    do_terminate = 0;
 }
 
 void pre_state_change(uint8_t *as, uint8_t *an) {
@@ -215,25 +226,6 @@ void soes_task() {
     soes_init();
 
     while (true) {
-        // if (inited == 1 && HAL_GetTick() - last_cycle_time >= 1 && HAL_GetTick() - task_load_time < 1000) {
-        //     if (Obj.slave_status >= 249) {
-        //         Obj.slave_status = MASTER_READY + 2;
-        //     } else {
-        //         Obj.slave_status++;
-        //     }
-        //     pdi_irq_flag = 1;
-        // }
-        //
-        // // normal state
-        // if (pdi_irq_flag) {
-        //     ESC_read (ESCREG_LOCALTIME, (void *) &ESCvar.Time, sizeof (ESCvar.Time));
-        //     DIG_process (DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG | DIG_PROCESS_INPUTS_FLAG);
-        //     pdi_irq_flag = 0;
-        // } else {
-        //     ecat_slv_poll();
-        //     DIG_process(DIG_PROCESS_WD_FLAG);
-        // }
-
         ecat_slv();
 
         // waiting state

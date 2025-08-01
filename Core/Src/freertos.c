@@ -26,6 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "soes_application.h"
+#include "task_manager.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -46,6 +47,7 @@
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN Variables */
 osThreadId soesTaskHandle;
+osThreadId soesLoaderTaskHandle;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -108,6 +110,9 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN RTOS_THREADS */
   osThreadDef(soesTask, soes_task, osPriorityRealtime, 0, 1024);
   soesTaskHandle = osThreadCreate(osThread(soesTask), NULL);
+
+  osThreadDef(soesLoaderTask, soes_task_loader, osPriorityRealtime, 0, 512);
+  soesLoaderTaskHandle = osThreadCreate(osThread(soesLoaderTask), NULL);
   /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 

@@ -53,6 +53,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Application/can_processor.cpp"
         "Application/uart_processor.cpp"
         "Application/i2c_processor.cpp"
+        "Application/adc_processor.cpp"
 
         "Application/app_dji_rc.cpp"
         "Application/app_hipnuc_imu.cpp"
@@ -60,6 +61,9 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Application/app_vanilla_pwm.cpp"
         "Application/app_external_pwm.cpp"
         "Application/app_ms5876_30ba.cpp"
+        "Application/app_adc.cpp"
+        "Application/app_can_pmu.cpp"
+        "Application/app_djimotor.cpp"
 
         "Bsp/bsp_delay.c"
 
