@@ -104,6 +104,12 @@ void task_load() {
                 uart_list.push_back(app);
                 break;
             }
+            case SBUS_RC_APP_ID: {
+                App_SBUS_RC *app = new App_SBUS_RC(global_args, &offset);
+                task_list.push_back(app);
+                uart_list.push_back(app);
+                break;
+            }
             case HIPNUC_IMU_CAN_APP_ID: {
                 App_HIPNUC_IMU *app = new App_HIPNUC_IMU(global_args, &offset);
                 task_list.push_back(app);
@@ -145,6 +151,26 @@ void task_load() {
             }
             case DJICAN_APP_ID: {
                 App_DJIMotor *app = new App_DJIMotor(global_args, &offset);
+                task_list.push_back(app);
+                can_list.push_back(app);
+                runnable_conf *conf = new runnable_conf();
+                conf->runnable = app;
+                conf->period = app->period;
+                run_confs.push_back(conf);
+
+                const osThreadDef_t task = {
+                    nullptr, (soes_device_handle),
+                    (osPriorityRealtime), (0), (512),
+                    NULL,
+                    NULL
+                };
+                taskDefs.push_back(&task);
+                taskHandles.push_back(
+                    osThreadCreate(taskDefs.back(), run_confs.back()));
+                break;
+            }
+            case DM_MOTOR_APP_ID: {
+                App_DMMotor *app = new App_DMMotor(global_args, &offset);
                 task_list.push_back(app);
                 can_list.push_back(app);
                 runnable_conf *conf = new runnable_conf();

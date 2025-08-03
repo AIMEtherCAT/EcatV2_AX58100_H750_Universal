@@ -6,7 +6,9 @@
 #define IOUTILS_H
 
 #include "stm32h7xx.h"
-
+#ifdef __cplusplus
+extern "C" {
+#endif
 float read_float16(uint8_t *t, int *offset);
 
 float read_float(uint8_t *t, int *offset);
@@ -30,5 +32,7 @@ void write_int32(int32_t value, uint8_t *t, int *offset);
 void write_uint16(uint16_t value, uint8_t *t, int *offset);
 
 int32_t read_int32(uint8_t *t, int *offset);
-
+#ifdef __cplusplus
+}
+#endif
 #endif //IOUTILS_H

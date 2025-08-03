@@ -64,6 +64,8 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Application/app_adc.cpp"
         "Application/app_can_pmu.cpp"
         "Application/app_djimotor.cpp"
+        "Application/app_sbus_rc.cpp"
+        "Application/app_dmmotor.cpp"
 
         "Bsp/bsp_delay.c"
 

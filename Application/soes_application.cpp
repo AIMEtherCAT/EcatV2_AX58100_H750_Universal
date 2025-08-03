@@ -14,6 +14,7 @@ extern "C" {
 #include "device_conf.h"
 #include "fdcan.h"
 #include "usart.h"
+#include "IOUtils.h"
 }
 
 #include "soes_application.h"
@@ -222,6 +223,42 @@ void pre_state_change(uint8_t *as, uint8_t *an) {
 }
 
 void soes_task() {
+
+    // vTaskDelay(300);
+    // int offset = 0;
+    // uint8_t tempbuf[255];
+    // memset(tempbuf, 0, sizeof(tempbuf));
+    // write_uint16(1, tempbuf, &offset);
+    // write_uint16(0x01, tempbuf, &offset);
+    // write_uint16(0x00, tempbuf, &offset);
+    // write_uint8(1, tempbuf, &offset);
+    // write_uint8(3, tempbuf, &offset);
+    // offset = 0;
+    // App_DMMotor *app = new App_DMMotor(tempbuf, &offset);
+    // task_list.push_back(app);
+    // can_list.push_back(app);
+    // memset(tempbuf, 0, sizeof(tempbuf));
+    // uint32_t last_ts = HAL_GetTick();
+    // while (1) {
+    //
+    //     if (HAL_GetTick() - last_ts > 1000) {
+    //         if (tempbuf[0] == 0 ) {
+    //             tempbuf[0] = 1;
+    //         } else {
+    //             tempbuf[0] = 0;
+    //         }
+    //         last_ts = HAL_GetTick();
+    //     }
+    //
+    //     offset = 0;
+    //     app->collect_inputs(tempbuf, &offset);
+    //     app->run_task();
+    //     vTaskDelay(1);
+    // }
+    //
+    // return;
+
+
     vTaskDelay(300);
     soes_init();
 

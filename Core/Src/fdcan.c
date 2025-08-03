@@ -41,7 +41,7 @@ void MX_FDCAN1_Init(void)
   hfdcan1.Instance = FDCAN1;
   hfdcan1.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan1.Init.Mode = FDCAN_MODE_NORMAL;
-  hfdcan1.Init.AutoRetransmission = DISABLE;
+  hfdcan1.Init.AutoRetransmission = ENABLE;
   hfdcan1.Init.TransmitPause = DISABLE;
   hfdcan1.Init.ProtocolException = ENABLE;
   hfdcan1.Init.NominalPrescaler = 3;
@@ -63,7 +63,7 @@ void MX_FDCAN1_Init(void)
   hfdcan1.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan1.Init.TxEventsNbr = 0;
   hfdcan1.Init.TxBuffersNbr = 0;
-  hfdcan1.Init.TxFifoQueueElmtsNbr = 4;
+  hfdcan1.Init.TxFifoQueueElmtsNbr = 10;
   hfdcan1.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan1.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
   if (HAL_FDCAN_Init(&hfdcan1) != HAL_OK)
@@ -89,7 +89,7 @@ void MX_FDCAN2_Init(void)
   hfdcan2.Instance = FDCAN2;
   hfdcan2.Init.FrameFormat = FDCAN_FRAME_CLASSIC;
   hfdcan2.Init.Mode = FDCAN_MODE_NORMAL;
-  hfdcan2.Init.AutoRetransmission = DISABLE;
+  hfdcan2.Init.AutoRetransmission = ENABLE;
   hfdcan2.Init.TransmitPause = DISABLE;
   hfdcan2.Init.ProtocolException = ENABLE;
   hfdcan2.Init.NominalPrescaler = 3;
@@ -111,7 +111,7 @@ void MX_FDCAN2_Init(void)
   hfdcan2.Init.RxBufferSize = FDCAN_DATA_BYTES_8;
   hfdcan2.Init.TxEventsNbr = 0;
   hfdcan2.Init.TxBuffersNbr = 0;
-  hfdcan2.Init.TxFifoQueueElmtsNbr = 4;
+  hfdcan2.Init.TxFifoQueueElmtsNbr = 10;
   hfdcan2.Init.TxFifoQueueMode = FDCAN_TX_FIFO_OPERATION;
   hfdcan2.Init.TxElmtSize = FDCAN_DATA_BYTES_8;
   if (HAL_FDCAN_Init(&hfdcan2) != HAL_OK)

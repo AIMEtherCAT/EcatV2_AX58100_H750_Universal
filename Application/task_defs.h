@@ -18,6 +18,8 @@
 #define MS5876_30BA_APP_ID 8
 #define ADC_APP_ID 9
 #define CAN_PMU_APP_ID 10
+#define SBUS_RC_APP_ID 11
+#define DM_MOTOR_APP_ID 12
 
 #ifdef __cplusplus
 extern "C" {
@@ -114,6 +116,23 @@ private:
     uint8_t rc_buf[19]{};
 };
 
+class App_SBUS_RC : public UartRunnable {
+public:
+    App_SBUS_RC(uint8_t *args, int *offset);
+
+    void collect_outputs(uint8_t *output, int *output_offset) override;
+
+    void uart_recv(uint16_t size, uint8_t *rx_data) override;
+
+    void uart_recv_err() override;
+
+    void exit() override;
+
+private:
+    uint32_t rc_last_receive_time{};
+    uint8_t rc_buf[26]{};
+};
+
 class App_DSHOT : public CustomRunnable {
 public:
     App_DSHOT(uint8_t *args, int *offset);
@@ -124,6 +143,7 @@ public:
 
 private:
     uint8_t dshot_id{};
+    uint32_t init_ts{};
 };
 
 class App_HIPNUC_IMU : public CanRunnable {
@@ -392,6 +412,61 @@ private:
 
     static int16_t calc_err(int16_t current_angle, int16_t target_angle);
 };
+
+typedef enum {
+    MIT = 0x01, POSITION_WITH_SPEED_LIMIT = 0x02, SPEED_DM = 0x03
+} dm_ctrl_mode_e;
+
+class App_DMMotor : public CanRunnable {
+public:
+    App_DMMotor(uint8_t *args, int *offset);
+
+    void collect_inputs(uint8_t *input, int *input_offset) override;
+
+    void collect_outputs(uint8_t *input, int *input_offset) override;
+
+    void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+    void exit() override;
+
+    void run_task() override;
+
+private:
+    FDCAN_TxHeaderTypeDef tx_header{};
+    uint8_t tx_data[8]{};
+    uint8_t report_buf[8]{};
+
+    uint8_t mode_change_buf[8]{};
+
+    // report
+    uint16_t master_id{};
+    // ctrl
+    uint16_t ctrl_id{};
+    uint8_t can_inst_id{};
+    dm_ctrl_mode_e ctrl_mode{};
+
+    uint8_t cmd_motor_enable{};
+    uint8_t cmd[8]{};
+
+    uint8_t motor_enabled{};
+
+    uint32_t last_state_change_ts{};
+    uint32_t last_recv_time{};
+
+    uint8_t mode_set{};
+
+    uint32_t get_ctrl_packet_id();
+};
+
+typedef enum {
+    OPENLOOP_CURRENT_LK = 0x01,
+    TORQUE_LK = 0x02,
+    SPEED_WITH_TORQUE_LIMIT_LK = 0x03,
+    MULTI_ROUND_POSITION_LK = 0x04,
+    MULTI_ROUND_POSITION_WITH_SPEED_LIMIT_LK = 0x05,
+    SINGLE_ROUND_POSITION_LK = 0x06,
+    SINGLE_ROUND_POSITION_WITH_SPEED_LIMIT_LK = 0x07,
+} lk_ctrl_mode_e;
 
 #ifdef __cplusplus
 }

@@ -13,6 +13,7 @@ extern "C" {
 
 App_DSHOT::App_DSHOT(uint8_t *args, int *offset) {
     dshot_id = read_uint8(args, offset);
+    uint16_t init_value = read_uint16(args, offset);
     if (dshot_id == 1) {
         init_tim3();
         init_dshot1();
@@ -22,9 +23,18 @@ App_DSHOT::App_DSHOT(uint8_t *args, int *offset) {
         init_dshot2();
         write_dshot2(0, 0, 0, 0);
     }
+    init_ts = HAL_GetTick();
 }
 
 void App_DSHOT::collect_inputs(uint8_t *input, int *input_offset) {
+    if (HAL_GetTick() - init_ts <= 100) {
+        if (dshot_id == 1) {
+            write_dshot1(0, 0, 0, 0);
+        } else if (dshot_id == 2) {
+            write_dshot2(0, 0, 0, 0);
+        }
+        return;
+    }
     if (dshot_id == 1) {
         write_dshot1(
             read_uint16(input, input_offset),
