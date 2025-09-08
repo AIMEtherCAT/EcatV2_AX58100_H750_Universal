@@ -56,7 +56,8 @@ uint16_t dshot_prepare_packet(uint16_t value) {
 
 void dshot_prepare_dmabuffer(uint32_t* motor_dmabuffer, uint16_t value) {
 	uint16_t packet;
-	packet = dshot_prepare_packet(LIMIT_MAX_MIN(LIMIT_MAX_MIN(value, 2000, 0) + 48, 2047, 48));
+	// packet = dshot_prepare_packet(LIMIT_MAX_MIN(LIMIT_MAX_MIN(value, 2000, 0) + 48, 2047, 48));
+	packet = dshot_prepare_packet(LIMIT_MAX_MIN(value, 2047, 0));
 
 	for(int i = 0; i < 16; i++) {
 		motor_dmabuffer[i] = (packet & 0x8000) ? MOTOR_BIT_1 : MOTOR_BIT_0;
