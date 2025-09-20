@@ -458,6 +458,13 @@ private:
     uint32_t get_ctrl_packet_id();
 };
 
+typedef struct {
+    int16_t current;
+    int16_t rpm;
+    uint16_t ecd;
+    uint8_t temperature;
+} lk_motor_status_t;
+
 typedef enum {
     OPENLOOP_CURRENT_LK = 0x01,
     TORQUE_LK = 0x02,
@@ -467,6 +474,53 @@ typedef enum {
     SINGLE_ROUND_POSITION_LK = 0x06,
     SINGLE_ROUND_POSITION_WITH_SPEED_LIMIT_LK = 0x07,
 } lk_ctrl_mode_e;
+
+
+class App_LkMotor : public CanRunnable {
+public:
+    App_LkMotor(uint8_t *args, int *offset);
+
+    void collect_inputs(uint8_t *input, int *input_offset) override;
+
+    void collect_outputs(uint8_t *input, int *input_offset) override;
+
+    void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+    void exit() override;
+
+    void run_task() override;
+
+private:
+    FDCAN_TxHeaderTypeDef tx_header{};
+    uint8_t tx_data[8]{};
+
+    uint8_t last_cmd{};
+    uint8_t state_change_confirm = 0;
+
+    lk_motor_status_t motor_status{};
+    uint32_t can_packet_id{};
+    uint8_t can_inst_id{};
+
+    lk_ctrl_mode_e ctrl_mode;
+
+    uint8_t cmd_motor_enable;
+    // valid for 0x01 0x02 0x03
+    int16_t cmd_torque{};
+    // valid for 0x03
+    int32_t cmd_speed{};
+    // valid for 0x04 0x05
+    int32_t cmd_multi_round_angle{};
+    // valid for 0x05 0x07
+    uint16_t cmd_speed_limit{};
+    // valid for 0x06 0x07
+    uint32_t cmd_single_round_angle{};
+    // valid for 0x06 0x07
+    uint8_t cmd_direction{};
+
+    void disable_motor();
+
+    void enable_motor();
+};
 
 #ifdef __cplusplus
 }

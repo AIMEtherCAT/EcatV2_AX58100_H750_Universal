@@ -189,6 +189,26 @@ void task_load() {
                     osThreadCreate(taskDefs.back(), run_confs.back()));
                 break;
             }
+            case LK_APP_ID: {
+                App_LkMotor *app = new App_LkMotor(global_args, &offset);
+                task_list.push_back(app);
+                can_list.push_back(app);
+                runnable_conf *conf = new runnable_conf();
+                conf->runnable = app;
+                conf->period = app->period;
+                run_confs.push_back(conf);
+
+                const osThreadDef_t task = {
+                    nullptr, (soes_device_handle),
+                    (osPriorityRealtime), (0), (512),
+                    NULL,
+                    NULL
+                };
+                taskDefs.push_back(&task);
+                taskHandles.push_back(
+                    osThreadCreate(taskDefs.back(), run_confs.back()));
+                break;
+            }
         }
     }
 }

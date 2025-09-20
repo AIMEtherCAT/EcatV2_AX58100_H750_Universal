@@ -90,7 +90,8 @@ void App_DMMotor::collect_inputs(uint8_t *input, int *input_offset) {
 			(*input_offset) += 4;
 			break;
 		}
-		default: {}
+		default: {
+		}
 	}
 }
 
@@ -110,7 +111,6 @@ uint32_t App_DMMotor::get_ctrl_packet_id() {
 		}
 	}
 }
-int err;
 
 void App_DMMotor::run_task() {
 	if (!running) {
@@ -175,17 +175,17 @@ void App_DMMotor::run_task() {
 			memcpy(tx_data, cmd, 4);
 			break;
 		}
-		default: {}
+		default: {
+		}
 	}
 
 	this->tx_header.Identifier = get_ctrl_packet_id();
-	err = HAL_FDCAN_AddMessageToTxFifoQ(this->can_inst, &this->tx_header, this->tx_data);
+	HAL_FDCAN_AddMessageToTxFifoQ(this->can_inst, &this->tx_header, this->tx_data);
 }
 
 
 void App_DMMotor::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {
 	if (master_id == rx_header->Identifier) {
-
 		if ((rx_data[0] & 0x0F) != (ctrl_id & 0x0F)) {
 			return;
 		}
