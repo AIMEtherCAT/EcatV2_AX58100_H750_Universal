@@ -80,7 +80,7 @@ App_LkMotor::App_LkMotor(uint8_t *args, int *offset) {
 
 void App_LkMotor::collect_outputs(uint8_t *output, int *output_offset) {
     write_int16(this->motor_status.current, output, output_offset);
-    write_int16(this->motor_status.rpm, output, output_offset);
+    write_int16(this->motor_status.speed, output, output_offset);
     write_uint16(this->motor_status.ecd, output, output_offset);
     write_uint8(this->motor_status.temperature, output, output_offset);
 }
@@ -238,7 +238,7 @@ void App_LkMotor::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {
         int16_t spd;
         *(uint8_t *) (&spd) = rx_data[4];
         *((uint8_t *) (&spd) + 1) = rx_data[5];
-        this->motor_status.rpm = ((float) spd) * 60.0f / 360.0f;
+        this->motor_status.speed = spd;
 
         *(uint8_t *) (&(this->motor_status.ecd)) = rx_data[6];
         *((uint8_t *) (&(this->motor_status.ecd)) + 1) = rx_data[7];

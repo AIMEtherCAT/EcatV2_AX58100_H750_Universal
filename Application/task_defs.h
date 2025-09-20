@@ -460,7 +460,7 @@ private:
 
 typedef struct {
     int16_t current;
-    int16_t rpm;
+    int16_t speed;
     uint16_t ecd;
     uint8_t temperature;
 } lk_motor_status_t;
