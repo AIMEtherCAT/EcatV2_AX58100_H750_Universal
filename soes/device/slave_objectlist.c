@@ -3,11 +3,11 @@
 #include <stddef.h>
 
 #ifndef HW_REV
-#define HW_REV "1.0"
+#define HW_REV "001"
 #endif
 
 #ifndef SW_REV
-#define SW_REV "1.0"
+#define SW_REV "002"
 #endif
 
 static const char acName1000[] = "Device Type";
