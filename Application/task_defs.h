@@ -452,6 +452,7 @@ private:
 
     uint32_t last_state_change_ts{};
     uint32_t last_recv_time{};
+    uint32_t first_recv_time{};
 
     uint8_t mode_set{};
 
