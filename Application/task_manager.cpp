@@ -81,6 +81,19 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::LK_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<lk_motor::LK_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    conf->thread_def = {
+                        .name = nullptr,
+                        .pthread = task_thread_func,
+                        .tpriority = osPriorityRealtime,
+                        .instances = 0,
+                        .stacksize = 1024,
+                        .buffer = nullptr,
+                        .controlblock = nullptr
+                    };
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::HIPNUC_IMU_CAN): {
@@ -170,11 +183,11 @@ namespace aim::ecat::task {
 
             if (last_slave_ready_flag.get() != application::get_is_slave_ready()->get()) {
                 if (application::get_is_slave_ready()->get()) {
-                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_NOT_LOADED_ARR);
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_LOADED_ARR);
                     __HAL_TIM_SET_COUNTER(&htim17, 0);
                     last_slave_ready_flag.set();
                 } else {
-                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_LOADED_ARR);
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_NOT_LOADED_ARR);
                     __HAL_TIM_SET_COUNTER(&htim17, 0);
                     last_slave_ready_flag.clear();
                 }
