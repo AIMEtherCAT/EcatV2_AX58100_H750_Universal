@@ -101,14 +101,14 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     GPIO_InitStruct.Pin = GPIO_PIN_9;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C3;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
     GPIO_InitStruct.Pin = GPIO_PIN_8;
     GPIO_InitStruct.Mode = GPIO_MODE_AF_OD;
     GPIO_InitStruct.Pull = GPIO_NOPULL;
-    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+    GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     GPIO_InitStruct.Alternate = GPIO_AF4_I2C3;
     HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
@@ -125,7 +125,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     hdma_i2c3_rx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_i2c3_rx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     hdma_i2c3_rx.Init.Mode = DMA_NORMAL;
-    hdma_i2c3_rx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+    hdma_i2c3_rx.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_i2c3_rx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_i2c3_rx) != HAL_OK)
     {
@@ -143,7 +143,7 @@ void HAL_I2C_MspInit(I2C_HandleTypeDef* i2cHandle)
     hdma_i2c3_tx.Init.PeriphDataAlignment = DMA_PDATAALIGN_BYTE;
     hdma_i2c3_tx.Init.MemDataAlignment = DMA_MDATAALIGN_BYTE;
     hdma_i2c3_tx.Init.Mode = DMA_NORMAL;
-    hdma_i2c3_tx.Init.Priority = DMA_PRIORITY_VERY_HIGH;
+    hdma_i2c3_tx.Init.Priority = DMA_PRIORITY_HIGH;
     hdma_i2c3_tx.Init.FIFOMode = DMA_FIFOMODE_DISABLE;
     if (HAL_DMA_Init(&hdma_i2c3_tx) != HAL_OK)
     {

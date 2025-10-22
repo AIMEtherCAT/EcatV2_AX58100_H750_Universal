@@ -1,27 +1,20 @@
 //
-// Created by Hang XU on 21/04/2025.
+// Created by Hang XU on 21/10/2025.
 //
 
-#ifndef TASK_MANAGER_H
-#define TASK_MANAGER_H
-
-#include <stm32h7xx_hal.h>
-
+#ifndef ECATV2_AX58100_H750_UNIVERSAL_TASK_MANAGER_H
+#define ECATV2_AX58100_H750_UNIVERSAL_TASK_MANAGER_H
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void soes_task_loader();
-
-void task_spin();
-
-void collect_spin();
-
-void task_load();
+[[noreturn]] void task_manager();
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif //TASK_MANAGER_H
+void init_task_manager();
+
+#endif //ECATV2_AX58100_H750_UNIVERSAL_TASK_MANAGER_H

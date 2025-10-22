@@ -12,6 +12,9 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS ON)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
 
 # Define the build type
 if(NOT CMAKE_BUILD_TYPE)
@@ -50,33 +53,34 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
         "Application/soes_application.cpp"
         "Application/task_manager.cpp"
-        "Application/can_processor.cpp"
-        "Application/uart_processor.cpp"
-        "Application/i2c_processor.cpp"
-        "Application/adc_processor.cpp"
+        "Application/callbacks.cpp"
 
-        "Application/app_dji_rc.cpp"
-        "Application/app_hipnuc_imu.cpp"
-        "Application/app_dshot.cpp"
-        "Application/app_vanilla_pwm.cpp"
-        "Application/app_external_pwm.cpp"
-        "Application/app_ms5876_30ba.cpp"
-        "Application/app_adc.cpp"
-        "Application/app_can_pmu.cpp"
-        "Application/app_djimotor.cpp"
-        "Application/app_sbus_rc.cpp"
-        "Application/app_dmmotor.cpp"
-        "Application/app_lkmotor.cpp"
+        "Application/Task/dbus_rc.cpp"
 
-        "Bsp/bsp_delay.c"
+#        "Application/can_processor.cpp"
+#        "Application/uart_processor.cpp"
+#        "Application/i2c_processor.cpp"
+#        "Application/adc_processor.cpp"
+#
+#        "Application/app_dji_rc.cpp"
+#        "Application/app_hipnuc_imu.cpp"
+#        "Application/app_dshot.cpp"
+#        "Application/app_vanilla_pwm.cpp"
+#        "Application/app_external_pwm.cpp"
+#        "Application/app_ms5876_30ba.cpp"
+#        "Application/app_adc.cpp"
+#        "Application/app_can_pmu.cpp"
+#        "Application/app_djimotor.cpp"
+#        "Application/app_sbus_rc.cpp"
+#        "Application/app_dmmotor.cpp"
+#        "Application/app_lkmotor.cpp"
 
-        "Utils/pid.c"
-        "Utils/lowpass_filter.c"
-        "Utils/kalman.cpp"
-        "Utils/dshot.c"
-        "Utils/IOUtils.cpp"
-        "Utils/device_conf.c"
-        "Utils/CRC8_CRC16.c"
+        "Utils/pid.cpp"
+        "Utils/crc.cpp"
+        "Utils/initializer.cpp"
+        "Utils/peripheral_manager.cpp"
+        "Utils/io_utils.cpp"
+        "Utils/buffer_manager.cpp"
 
         "soes/device/slave_objectlist.c"
         "soes/hal/esc_hw.c"

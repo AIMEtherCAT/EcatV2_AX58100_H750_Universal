@@ -48,6 +48,15 @@
 /* USER CODE BEGIN Variables */
 osThreadId soesTaskHandle;
 osThreadId soesLoaderTaskHandle;
+
+osMutexId ADC1InitMutexHandle;
+osMutexId CANInitMutexHandle;
+osMutexId USART1InitMutexHandle;
+osMutexId UART4InitMutexHandle;
+osMutexId UART8InitMutexHandle;
+osMutexId TIM2InitMutexHandle;
+osMutexId TIM3InitMutexHandle;
+osMutexId I2C3InitMutexHandle;
 /* USER CODE END Variables */
 osThreadId defaultTaskHandle;
 
@@ -67,13 +76,14 @@ void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackTy
 static StaticTask_t xIdleTaskTCBBuffer;
 static StackType_t xIdleStack[configMINIMAL_STACK_SIZE];
 
-void vApplicationGetIdleTaskMemory( StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer, uint32_t *pulIdleTaskStackSize )
-{
-  *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
-  *ppxIdleTaskStackBuffer = &xIdleStack[0];
-  *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
-  /* place for user code */
+void vApplicationGetIdleTaskMemory(StaticTask_t **ppxIdleTaskTCBBuffer, StackType_t **ppxIdleTaskStackBuffer,
+                                   uint32_t *pulIdleTaskStackSize) {
+    *ppxIdleTaskTCBBuffer = &xIdleTaskTCBBuffer;
+    *ppxIdleTaskStackBuffer = &xIdleStack[0];
+    *pulIdleTaskStackSize = configMINIMAL_STACK_SIZE;
+    /* place for user code */
 }
+
 /* USER CODE END GET_IDLE_TASK_MEMORY */
 
 /**
@@ -85,21 +95,23 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
+  /* Create the mutex(es) */
+
 
   /* USER CODE BEGIN RTOS_MUTEX */
-  /* add mutexes, ... */
+    /* add mutexes, ... */
   /* USER CODE END RTOS_MUTEX */
 
   /* USER CODE BEGIN RTOS_SEMAPHORES */
-  /* add semaphores, ... */
+    /* add semaphores, ... */
   /* USER CODE END RTOS_SEMAPHORES */
 
   /* USER CODE BEGIN RTOS_TIMERS */
-  /* start timers, add new ones, ... */
+    /* start timers, add new ones, ... */
   /* USER CODE END RTOS_TIMERS */
 
   /* USER CODE BEGIN RTOS_QUEUES */
-  /* add queues, ... */
+    /* add queues, ... */
   /* USER CODE END RTOS_QUEUES */
 
   /* Create the thread(s) */
@@ -108,12 +120,12 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-  osThreadDef(soesTask, soes_task, osPriorityRealtime, 0, 1024);
-  soesTaskHandle = osThreadCreate(osThread(soesTask), NULL);
+    osThreadDef(soesTask, soes_application, osPriorityHigh, 0, 512);
+    soesTaskHandle = osThreadCreate(osThread(soesTask), NULL);
 
-  osThreadDef(soesLoaderTask, soes_task_loader, osPriorityRealtime, 0, 512);
-  soesLoaderTaskHandle = osThreadCreate(osThread(soesLoaderTask), NULL);
-  /* add threads, ... */
+    osThreadDef(soesLoaderTask, task_manager, osPriorityHigh, 0, 512);
+    soesLoaderTaskHandle = osThreadCreate(osThread(soesLoaderTask), NULL);
+    /* add threads, ... */
   /* USER CODE END RTOS_THREADS */
 
 }
@@ -128,9 +140,9 @@ void MX_FREERTOS_Init(void) {
 void StartDefaultTask(void const * argument)
 {
   /* USER CODE BEGIN StartDefaultTask */
-  while (1) {
-    vTaskDelay(1);
-  }
+    while (1) {
+        vTaskDelay(1);
+    }
   /* USER CODE END StartDefaultTask */
 }
 

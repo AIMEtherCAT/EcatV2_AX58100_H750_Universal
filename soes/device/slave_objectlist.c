@@ -1,13 +1,10 @@
 #include "esc_coe.h"
 #include "utypes.h"
 #include <stddef.h>
+#include "settings.h"
 
 #ifndef HW_REV
 #define HW_REV "001"
-#endif
-
-#ifndef SW_REV
-#define SW_REV "002"
 #endif
 
 static const char acName1000[] = "Device Type";
