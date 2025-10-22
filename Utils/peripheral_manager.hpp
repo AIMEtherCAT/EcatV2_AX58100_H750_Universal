@@ -17,29 +17,56 @@ extern "C" {
 }
 
 namespace aim::utils {
+    class ThreadSafeFlag {
+    public:
+        ThreadSafeFlag() = default;
 
-class ThreadSafeFlag {
-public:
-    ThreadSafeFlag() = default;
-
-    explicit ThreadSafeFlag(const bool cond) {
-        if (cond) {
-            set();
+        explicit ThreadSafeFlag(const bool cond) {
+            if (cond) {
+                set();
+            }
         }
-    }
 
-    void set() { flag.store(true, std::memory_order_relaxed); }
-    void clear() { flag.store(false, std::memory_order_relaxed); }
-    [[nodiscard]] bool get() const { return flag.load(std::memory_order_relaxed); }
+        void set() { flag.store(true, std::memory_order_relaxed); }
+        void clear() { flag.store(false, std::memory_order_relaxed); }
+        [[nodiscard]] bool get() const { return flag.load(std::memory_order_relaxed); }
 
-private:
-    std::atomic<bool> flag{false};
-};
+    private:
+        std::atomic<bool> flag{false};
+    };
 
+    class ThreadSafeCounter {
+    public:
+        explicit ThreadSafeCounter(const uint32_t init = 0) : value(init) {
+        }
+
+
+        void increment() {
+            value.fetch_add(1, std::memory_order_relaxed);
+        }
+
+        void decrement() {
+            value.fetch_sub(1, std::memory_order_relaxed);
+        }
+
+        [[nodiscard]] uint32_t get() const {
+            return value.load(std::memory_order_relaxed);
+        }
+
+        void set(const uint32_t v) {
+            value.store(v, std::memory_order_relaxed);
+        }
+
+        void reset() {
+            set(0);
+        }
+
+    private:
+        std::atomic<uint32_t> value;
+    };
 }
 
 namespace aim::hardware::peripheral {
-
     using namespace io;
 
     class Peripheral {
@@ -105,8 +132,8 @@ namespace aim::hardware::peripheral {
     public:
         explicit UartPeripheral(const osMutexId mutex, UART_HandleTypeDef *huart, buffer::Buffer *send_buf,
                                 buffer::Buffer *recv_buf) : Peripheral(mutex), _huart(huart),
-                                                        _send_buf(send_buf),
-                                                        _recv_buf(recv_buf) {
+                                                            _send_buf(send_buf),
+                                                            _recv_buf(recv_buf) {
         }
 
         void receive_by_dma(const uint16_t size) const {
@@ -154,7 +181,7 @@ namespace aim::hardware::peripheral {
     class UART4Peripheral final : public UartPeripheral {
     public:
         explicit UART4Peripheral(const osMutexId mutex, UART_HandleTypeDef *huart, buffer::Buffer *send_buf,
-                                  buffer::Buffer *recv_buf) : UartPeripheral(
+                                 buffer::Buffer *recv_buf) : UartPeripheral(
             mutex, huart, send_buf, recv_buf) {
         }
 
@@ -167,7 +194,7 @@ namespace aim::hardware::peripheral {
     class UART8Peripheral final : public UartPeripheral {
     public:
         explicit UART8Peripheral(const osMutexId mutex, UART_HandleTypeDef *huart, buffer::Buffer *send_buf,
-                                  buffer::Buffer *recv_buf) : UartPeripheral(
+                                 buffer::Buffer *recv_buf) : UartPeripheral(
             mutex, huart, send_buf, recv_buf) {
         }
 
@@ -221,21 +248,20 @@ namespace aim::hardware::peripheral {
         void _deinit_impl() override;
     };
 
-        enum class Type {
-            PERIPHERAL_USART1,
-            PERIPHERAL_UART4,
-            PERIPHERAL_UART8,
-            PERIPHERAL_I2C3,
-            PERIPHERAL_CAN,
-            PERIPHERAL_TIM2,
-            PERIPHERAL_TIM3,
-            PERIPHERAL_ADC1
-        };
+    enum class Type {
+        PERIPHERAL_USART1,
+        PERIPHERAL_UART4,
+        PERIPHERAL_UART8,
+        PERIPHERAL_I2C3,
+        PERIPHERAL_CAN,
+        PERIPHERAL_TIM2,
+        PERIPHERAL_TIM3,
+        PERIPHERAL_ADC1
+    };
 
-        Peripheral *get_peripheral(Type type);
+    Peripheral *get_peripheral(Type type);
 
-        void init_peripheral_manager();
-
+    void init_peripheral_manager();
 }
 
 #endif //DEVICE_CONF_H

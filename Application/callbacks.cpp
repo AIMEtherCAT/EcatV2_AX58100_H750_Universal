@@ -26,7 +26,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
         static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy.clear(); // NOLINT
     }
 
-    for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
+    for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
@@ -41,7 +41,7 @@ void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 // ReSharper disable once CppParameterMayBeConst
 void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
-    for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
+    for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
@@ -56,7 +56,7 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
-    for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
+    for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
@@ -71,14 +71,14 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
 }
 
 void process_can_data(const FDCAN_HandleTypeDef *hfdcan, FDCAN_RxHeaderTypeDef *rx_header, uint8_t rx_data[8]) {
-    for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
+    for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_can_task.get()) {
             continue;
         }
-        if (hfdcan->Instance != static_cast<CanRunnable *>(conf->runnable.get())->can_inst->Instance) { // NOLINT
+        if (hfdcan->Instance != static_cast<CanRunnable *>(conf->runnable.get())->can_inst_->Instance) { // NOLINT
             continue;
         }
-        if (rx_header->IdType != static_cast<CanRunnable *>(conf->runnable.get())->can_id_type) { // NOLINT
+        if (rx_header->IdType != static_cast<CanRunnable *>(conf->runnable.get())->can_id_type_) { // NOLINT
             continue;
         }
 

@@ -16,33 +16,42 @@ extern "C" {
 #include "tim.h"
 }
 
-namespace aim::ecat::task {
+void task_thread_func(void const *argument) {
+    aim::ecat::task::task_thread_func_impl(argument);
+    vTaskDelete(nullptr);
+}
 
-    osMutexId appTerminationMutexHandle;
+namespace aim::ecat::task {
     osMutexId runConfMutexHandle;
-    uint8_t terminated_task_counter = 0;
+
+    utils::ThreadSafeCounter terminated_counter;
+
+    utils::ThreadSafeCounter *get_terminated_counter() {
+        return &terminated_counter;
+    }
 
     std::vector<std::shared_ptr<runnable_conf> > run_confs;
 
+    std::vector<std::shared_ptr<runnable_conf> > *get_run_confs() {
+        return &run_confs;
+    }
+
     void init_task_manager() {
-        osMutexDef(appTerminationMutex);
-        appTerminationMutexHandle = osMutexCreate(osMutex(appTerminationMutex));
         osMutexDef(runConfMutex);
         runConfMutexHandle = osMutexCreate(osMutex(runConfMutex));
     }
 
     // ReSharper disable once CppParameterMayBeConstPtrOrRef
-    void task_thread_func(void *argument) {
-        std::shared_ptr<runnable_conf> conf_inst; {
-            osMutexWait(runConfMutexHandle, osWaitForever);
-            for (auto &ptr: run_confs) {
-                if (ptr.get() == argument) {
-                    conf_inst = ptr;
-                    break;
-                }
+    void task_thread_func_impl(void const *argument) {
+        std::shared_ptr<runnable_conf> conf_inst;
+        osMutexWait(runConfMutexHandle, osWaitForever);
+        for (std::shared_ptr<runnable_conf> &ptr: run_confs) {
+            if (ptr.get() == argument) {
+                conf_inst = ptr;
+                break;
             }
-            osMutexRelease(runConfMutexHandle);
         }
+        osMutexRelease(runConfMutexHandle);
 
         // ReSharper disable once CppDFAEndlessLoop
         while (true) {
@@ -54,10 +63,7 @@ namespace aim::ecat::task {
         }
 
         conf_inst->runnable->exit();
-        osMutexWait(appTerminationMutexHandle, osWaitForever);
-        terminated_task_counter++;
-        osMutexRelease(appTerminationMutexHandle);
-        vTaskDelete(nullptr);
+        terminated_counter.increment();
     }
 
     static void load_task() {
@@ -70,6 +76,9 @@ namespace aim::ecat::task {
             switch (buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8()) {
                 case static_cast<uint8_t>(TaskType::DBUS_RC): {
                     conf->is_uart_task.set();
+                    conf->runnable = std::make_unique<dbus_rc::DBUS_RC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::LK_MOTOR): {
@@ -82,6 +91,20 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::DJI_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<dji_motor::DJI_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    conf->thread_def = {
+                        .name = nullptr,
+                        .pthread = task_thread_func,
+                        .tpriority = osPriorityRealtime,
+                        .instances = 0,
+                        .stacksize = 1024,
+                        .buffer = nullptr,
+                        .controlblock = nullptr
+                    };
+
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::ONBOARD_PWM): {
@@ -110,8 +133,13 @@ namespace aim::ecat::task {
             }
 
             run_confs.push_back(conf);
+            if (conf->thread_def.stacksize != 0) {
+                osThreadCreate(&conf->thread_def, conf.get());
+            }
         }
     }
+
+    static ThreadSafeFlag last_slave_ready_flag;
 
     [[noreturn]] void task_manager_impl() {
         while (true) {
@@ -121,12 +149,18 @@ namespace aim::ecat::task {
                 HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_SET);
             }
 
-            if (application::get_is_slave_ready()->get()) {
-                // task loaded, 20hz / 50ms
-                __HAL_TIM_SET_AUTORELOAD(&htim17, LED_50MS_ARR);
-            } else {
-                // task not loaded, 4hz / 250ms
-                __HAL_TIM_SET_AUTORELOAD(&htim17, LED_250MS_ARR);
+            if (last_slave_ready_flag.get() != application::get_is_slave_ready()->get()) {
+                if (application::get_is_slave_ready()->get()) {
+                    // task loaded, 40hz / 25ms
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_25MS_ARR);
+                    __HAL_TIM_SET_COUNTER(&htim17, 0);
+                    last_slave_ready_flag.set();
+                } else {
+                    // task not loaded, 4hz / 250ms
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_250MS_ARR);
+                    __HAL_TIM_SET_COUNTER(&htim17, 0);
+                    last_slave_ready_flag.clear();
+                }
             }
 
             if (application::get_is_task_ready_to_load()->get()) {
@@ -135,7 +169,7 @@ namespace aim::ecat::task {
                 application::get_is_task_loaded()->set();
             }
 
-            vTaskDelay(100);
+            vTaskDelay(10);
         }
     }
 }

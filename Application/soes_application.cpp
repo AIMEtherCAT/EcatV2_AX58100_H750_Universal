@@ -7,6 +7,7 @@
 #include "settings.h"
 #include "soes_application.hpp"
 #include "utypes.h"
+#include "task_manager.hpp"
 
 extern "C" {
 #include "ecat_slv.h"
@@ -25,7 +26,7 @@ esc_cfg_t config = {
     // NOLINTNEXTLINE(*-non-const-parameter)
     .pre_state_change_hook = [](uint8_t *as, uint8_t * /* an */) {
         if (const uint8_t target = *as >> 4 & 0x0F; target == ESCinit) {
-            // initialize_soes();
+            aim::ecat::application::do_terminate();
         }
     },
     .post_state_change_hook = nullptr,
@@ -55,7 +56,6 @@ esc_cfg_t config = {
 };
 
 namespace aim::ecat::application {
-
     using namespace io;
 
     uint16_t arg_recv_idx = 0;
@@ -63,19 +63,19 @@ namespace aim::ecat::application {
     ThreadSafeFlag is_task_ready_to_load;
     ThreadSafeFlag is_slave_ready;
 
-    ThreadSafeFlag* get_is_task_loaded() {
+    ThreadSafeFlag *get_is_task_loaded() {
         return &is_task_loaded;
     }
 
-    ThreadSafeFlag* get_is_task_ready_to_load() {
+    ThreadSafeFlag *get_is_task_ready_to_load() {
         return &is_task_ready_to_load;
     }
 
-    ThreadSafeFlag* get_is_slave_ready() {
+    ThreadSafeFlag *get_is_slave_ready() {
         return &is_slave_ready;
     }
 
-    void init_soes_buffers() {
+    void init_soes_env() {
         arg_recv_idx = 0;
         is_task_loaded.clear();
         is_task_ready_to_load.clear();
@@ -83,18 +83,38 @@ namespace aim::ecat::application {
 
         memset(Obj.master2slave, 0, 80);
         memset(Obj.slave2master, 0, 80);
-        Obj.sdo_len = 0;
-        Obj.master_status = MASTER_UNKNOWN;
-        Obj.slave_status = SLAVE_INITIALIZING;
+        // Obj.sdo_len = 0;
+        // Obj.master_status = MASTER_UNKNOWN;
+        // Obj.slave_status = SLAVE_INITIALIZING;
 
         buffer::get_buffer(buffer::Type::ECAT_ARGS)->reset();
         buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->reset();
         buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->reset();
     }
 
+    void do_terminate() {
+        uint32_t thread_count = 0;
+        for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+            conf->runnable->running.clear();
+            if (conf->thread_def.stacksize != 0) {
+                thread_count++;
+            }
+        }
+
+        while (task::get_terminated_counter()->get() != thread_count) {
+            vTaskDelay(1);
+        }
+
+        init_soes_env();
+        buffer::clear_all_buffers();
+        task::get_terminated_counter()->reset();
+        task::get_run_confs()->clear();
+    }
+
     void cb_get_inputs_impl() {
         buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->reset();
-        buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->raw_write(reinterpret_cast<uint8_t *>(Obj.master2slave), 80);
+        buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->raw_write(
+            reinterpret_cast<uint8_t *>(Obj.master2slave), 80);
 
         // no any packet received yet
         if (Obj.master_status == MASTER_UNKNOWN) {
@@ -132,7 +152,9 @@ namespace aim::ecat::application {
             return;
         }
 
-        // task_spin();
+        for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+            conf->runnable->read_from_master(buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE));
+        }
     }
 
     void cb_set_outputs_impl() {
@@ -159,13 +181,16 @@ namespace aim::ecat::application {
                 Obj.slave_status = SLAVE_READY;
             }
         } else {
-            // collect_spin();
+            for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+                conf->runnable->write_to_master(buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER));
+            }
             // this flag is for round-trip latency calculation
             // master -> slave -> master
             Obj.slave_status = Obj.master_status;
         }
 
-        buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->raw_read(reinterpret_cast<uint8_t *>(Obj.slave2master), 80);
+        buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->raw_read(
+            reinterpret_cast<uint8_t *>(Obj.slave2master), 80);
     }
 
     // use free-run currently, no irq required

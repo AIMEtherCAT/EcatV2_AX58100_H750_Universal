@@ -1,38 +1,39 @@
 #include "buffer_manager.hpp"
 #include "peripheral_manager.hpp"
 #include "task_defs.hpp"
-#include "settings.h"
 
-namespace aim::ecat::task {
-    Task_DBUS_RC::Task_DBUS_RC(buffer::Buffer /* arguments */) {
-        _peripheral = peripheral::get_peripheral(peripheral::Type::PERIPHERAL_UART8);
+namespace aim::ecat::task::dbus_rc {
+    DBUS_RC::DBUS_RC(buffer::Buffer * /* buffer */) {
+        peripheral_ = peripheral::get_peripheral(peripheral::Type::PERIPHERAL_UART8);
 
         get_peripheral()->init();
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(18);
     }
 
-    void Task_DBUS_RC::write_to_master(buffer::Buffer *slave_to_master_buf) {
-        _buf[18] = HAL_GetTick() - _last_receive_time <= 20;
-        slave_to_master_buf->write(_buf, 19);
+    void DBUS_RC::write_to_master(buffer::Buffer *slave_to_master_buf) {
+        buf_[18] = HAL_GetTick() - last_receive_time_ <= 20;
+        slave_to_master_buf->write(buf_, 19);
     }
 
-    void Task_DBUS_RC::uart_recv(const uint16_t size) {
+    void DBUS_RC::uart_recv(const uint16_t size) {
         if (size == 18) {
-            if (const uint16_t channel = (get_peripheral<peripheral::UartPeripheral>()->_recv_buf->get_buf_pointer<uint8_t>()[0] |
-                                          get_peripheral<peripheral::UartPeripheral>()->_recv_buf->get_buf_pointer<uint8_t>()[1] <<
+            if (const uint16_t channel = (get_peripheral<peripheral::UartPeripheral>()->_recv_buf->get_buf_pointer<
+                                              uint8_t>()[0] |
+                                          get_peripheral<peripheral::UartPeripheral>()->_recv_buf->get_buf_pointer<
+                                              uint8_t>()[1] <<
                                           8) & 0x07ff; channel > DBUS_RC_CHANNAL_ERROR_VALUE) {
-                _last_receive_time = HAL_GetTick();
-                get_peripheral<peripheral::UartPeripheral>()->_recv_buf->raw_read(_buf, 18);
-                                          }
+                last_receive_time_ = HAL_GetTick();
+                get_peripheral<peripheral::UartPeripheral>()->_recv_buf->raw_read(buf_, 18);
+            }
         }
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(18);
     }
 
-    void Task_DBUS_RC::uart_err() {
+    void DBUS_RC::uart_err() {
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(18);
     }
 
-    void Task_DBUS_RC::exit() {
+    void DBUS_RC::exit() {
         get_peripheral()->deinit();
     }
 }

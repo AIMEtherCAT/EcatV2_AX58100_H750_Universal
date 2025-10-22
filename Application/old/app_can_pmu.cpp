@@ -33,10 +33,10 @@ void App_CAN_PMU::collect_inputs(uint8_t *output, int *output_offset) {
     if (HAL_GetTick() - last_node_status_pub_ts > 998) {
         uptime++;
 
-        node_status_data[0] = (uint8_t) (uptime & 0xFF);
-        node_status_data[1] = (uint8_t) ((uptime >> 8) & 0xFF);
-        node_status_data[2] = (uint8_t) ((uptime >> 16) & 0xFF);
-        node_status_data[3] = (uint8_t) ((uptime >> 24) & 0xFF);
+        node_status_data[0] = (uint8_t)(uptime & 0xFF);
+        node_status_data[1] = (uint8_t)((uptime >> 8) & 0xFF);
+        node_status_data[2] = (uint8_t)((uptime >> 16) & 0xFF);
+        node_status_data[3] = (uint8_t)((uptime >> 24) & 0xFF);
         node_status_data[4] = 0x00;
         node_status_data[5] = 0x00;
         node_status_data[6] = 0x00;
@@ -68,7 +68,7 @@ void App_CAN_PMU::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {
 
     if (!uavcan_rx.initialized ||
         (now - uavcan_rx.last_ts > UAVCAN_TID_TIMEOUT_MS) ||
-        (is_first && ((uint8_t) ((tail.tid - uavcan_rx.transfer_id) & 0x1F) > 1))) {
+        (is_first && ((uint8_t)((tail.tid - uavcan_rx.transfer_id) & 0x1F) > 1))) {
         uavcan_rx.initialized = 1;
         uavcan_rx.transfer_id = tail.tid;
         uavcan_rx.toggle = 0;

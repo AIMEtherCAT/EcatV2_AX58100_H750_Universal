@@ -10,8 +10,8 @@
 #include "task_manager.hpp"
 
 extern "C" {
-    #include "ecat_slv.h"
-    #include "tim.h"
+#include "ecat_slv.h"
+#include "tim.h"
 }
 
 extern esc_cfg_t config;
@@ -20,7 +20,7 @@ void initialize() {
     aim::io::buffer::init_buffer_manager();
     aim::hardware::peripheral::init_peripheral_manager();
     aim::ecat::task::init_task_manager();
-    aim::ecat::application::init_soes_buffers();
+    aim::ecat::application::init_soes_env();
 
     // 10khz
     __HAL_TIM_SET_PRESCALER(&htim17, LED_PSC);

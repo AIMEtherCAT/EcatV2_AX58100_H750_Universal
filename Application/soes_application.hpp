@@ -8,13 +8,15 @@
 namespace aim::ecat::application {
     using utils::ThreadSafeFlag;
 
-    void init_soes_buffers();
+    void init_soes_env();
 
-    ThreadSafeFlag* get_is_task_loaded();
+    void do_terminate();
 
-    ThreadSafeFlag* get_is_task_ready_to_load();
+    ThreadSafeFlag *get_is_task_loaded();
 
-    ThreadSafeFlag* get_is_slave_ready();
+    ThreadSafeFlag *get_is_task_ready_to_load();
+
+    ThreadSafeFlag *get_is_slave_ready();
 }
 
 #endif //ECATV2_AX58100_H750_UNIVERSAL_SOES_APPLICATION_H

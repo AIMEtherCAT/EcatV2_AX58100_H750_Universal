@@ -5,11 +5,11 @@
 
 #include <map>
 #include <memory>
+#include <ranges>
 
 #include "settings.h"
 
 namespace aim::io::buffer {
-
     DMA_BUFFER static uint32_t dshot1_motor1_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
     DMA_BUFFER static uint32_t dshot1_motor2_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
     DMA_BUFFER static uint32_t dshot1_motor3_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
@@ -38,20 +38,28 @@ namespace aim::io::buffer {
     static uint8_t ecat_slave_to_master_buf[80];
     static uint8_t ecat_master_to_slave_buf[80];
 
-    static std::map<Type, std::unique_ptr<Buffer>> instances;
+    static std::map<Type, std::unique_ptr<Buffer> > instances;
 
     void init_buffer_manager() {
         if (!instances.empty()) return;
 
-        instances[Type::DSHOT1_MOTOR1] = std::make_unique<Buffer>(dshot1_motor1_dmabuffer, sizeof(dshot1_motor1_dmabuffer));
-        instances[Type::DSHOT1_MOTOR2] = std::make_unique<Buffer>(dshot1_motor2_dmabuffer, sizeof(dshot1_motor2_dmabuffer));
-        instances[Type::DSHOT1_MOTOR3] = std::make_unique<Buffer>(dshot1_motor3_dmabuffer, sizeof(dshot1_motor3_dmabuffer));
-        instances[Type::DSHOT1_MOTOR4] = std::make_unique<Buffer>(dshot1_motor4_dmabuffer, sizeof(dshot1_motor4_dmabuffer));
+        instances[Type::DSHOT1_MOTOR1] = std::make_unique<Buffer>(dshot1_motor1_dmabuffer,
+                                                                  sizeof(dshot1_motor1_dmabuffer));
+        instances[Type::DSHOT1_MOTOR2] = std::make_unique<Buffer>(dshot1_motor2_dmabuffer,
+                                                                  sizeof(dshot1_motor2_dmabuffer));
+        instances[Type::DSHOT1_MOTOR3] = std::make_unique<Buffer>(dshot1_motor3_dmabuffer,
+                                                                  sizeof(dshot1_motor3_dmabuffer));
+        instances[Type::DSHOT1_MOTOR4] = std::make_unique<Buffer>(dshot1_motor4_dmabuffer,
+                                                                  sizeof(dshot1_motor4_dmabuffer));
 
-        instances[Type::DSHOT2_MOTOR1] = std::make_unique<Buffer>(dshot2_motor1_dmabuffer, sizeof(dshot2_motor1_dmabuffer));
-        instances[Type::DSHOT2_MOTOR2] = std::make_unique<Buffer>(dshot2_motor2_dmabuffer, sizeof(dshot2_motor2_dmabuffer));
-        instances[Type::DSHOT2_MOTOR3] = std::make_unique<Buffer>(dshot2_motor3_dmabuffer, sizeof(dshot2_motor3_dmabuffer));
-        instances[Type::DSHOT2_MOTOR4] = std::make_unique<Buffer>(dshot2_motor4_dmabuffer, sizeof(dshot2_motor4_dmabuffer));
+        instances[Type::DSHOT2_MOTOR1] = std::make_unique<Buffer>(dshot2_motor1_dmabuffer,
+                                                                  sizeof(dshot2_motor1_dmabuffer));
+        instances[Type::DSHOT2_MOTOR2] = std::make_unique<Buffer>(dshot2_motor2_dmabuffer,
+                                                                  sizeof(dshot2_motor2_dmabuffer));
+        instances[Type::DSHOT2_MOTOR3] = std::make_unique<Buffer>(dshot2_motor3_dmabuffer,
+                                                                  sizeof(dshot2_motor3_dmabuffer));
+        instances[Type::DSHOT2_MOTOR4] = std::make_unique<Buffer>(dshot2_motor4_dmabuffer,
+                                                                  sizeof(dshot2_motor4_dmabuffer));
 
         instances[Type::I2C3_RECV] = std::make_unique<Buffer>(i2c3_recv_buf, sizeof(i2c3_recv_buf));
         instances[Type::I2C3_SEND] = std::make_unique<Buffer>(i2c3_send_buf, sizeof(i2c3_send_buf));
@@ -68,8 +76,10 @@ namespace aim::io::buffer {
         instances[Type::ADC1_RECV] = std::make_unique<Buffer>(adc1_recv_buf, sizeof(adc1_recv_buf));
 
         instances[Type::ECAT_ARGS] = std::make_unique<Buffer>(ecat_args_buf, sizeof(ecat_args_buf));
-        instances[Type::ECAT_SLAVE_TO_MASTER] = std::make_unique<Buffer>(ecat_slave_to_master_buf, sizeof(ecat_slave_to_master_buf));
-        instances[Type::ECAT_MASTER_TO_SLAVE] = std::make_unique<Buffer>(ecat_master_to_slave_buf, sizeof(ecat_master_to_slave_buf));
+        instances[Type::ECAT_SLAVE_TO_MASTER] = std::make_unique<Buffer>(
+            ecat_slave_to_master_buf, sizeof(ecat_slave_to_master_buf));
+        instances[Type::ECAT_MASTER_TO_SLAVE] = std::make_unique<Buffer>(
+            ecat_master_to_slave_buf, sizeof(ecat_master_to_slave_buf));
     }
 
     Buffer *get_buffer(const Type type) {
@@ -77,5 +87,13 @@ namespace aim::io::buffer {
             return it->second.get();
         }
         return nullptr;
+    }
+
+    void clear_all_buffers() {
+        for (auto &val: instances | std::views::values) {
+            if (val) {
+                val->reset();
+            }
+        }
     }
 }

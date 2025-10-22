@@ -56,6 +56,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Application/callbacks.cpp"
 
         "Application/Task/dbus_rc.cpp"
+        "Application/Task/dji_motor.cpp"
 
 #        "Application/can_processor.cpp"
 #        "Application/uart_processor.cpp"

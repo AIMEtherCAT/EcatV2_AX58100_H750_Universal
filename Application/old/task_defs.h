@@ -87,20 +87,20 @@ typedef struct {
     uint16_t period;
 } runnable_conf;
 
-    enum class TaskType : uint8_t {
-        DBUS_RC = 1,
-        LK_MOTOR = 2,
-        HIPNUC_IMU_CAN = 3,
-        DSHOT = 4,
-        DJI_MOTOR = 5,
-        ONBOARD_PWM = 6,
-        EXTERNAL_PWM = 7,
-        MS5876_30BA = 8,
-        ADC = 9,
-        CAN_PMU = 10,
-        SBUS_RC = 11,
-        DM_MOTOR = 12
-    };
+enum class TaskType : uint8_t {
+    DBUS_RC = 1,
+    LK_MOTOR = 2,
+    HIPNUC_IMU_CAN = 3,
+    DSHOT = 4,
+    DJI_MOTOR = 5,
+    ONBOARD_PWM = 6,
+    EXTERNAL_PWM = 7,
+    MS5876_30BA = 8,
+    ADC = 9,
+    CAN_PMU = 10,
+    SBUS_RC = 11,
+    DM_MOTOR = 12
+};
 
 #define RC_CHANNAL_ERROR_VALUE 1700
 

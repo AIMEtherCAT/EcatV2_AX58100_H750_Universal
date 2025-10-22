@@ -29,51 +29,51 @@ namespace aim::io::buffer {
         ~Buffer() = default;
 
         float read_float16() {
-            return io::read_float16(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_float16(get_buf_pointer<uint8_t>(), &_index);
         }
 
         float read_float() {
-            return io::read_float(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_float(get_buf_pointer<uint8_t>(), &_index);
         }
 
         uint32_t read_uint32() {
-            return io::read_uint32(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_uint32(get_buf_pointer<uint8_t>(), &_index);
         }
 
         int32_t read_int32() {
-            return io::read_int32(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_int32(get_buf_pointer<uint8_t>(), &_index);
         }
 
         uint16_t read_uint16() {
-            return io::read_uint16(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_uint16(get_buf_pointer<uint8_t>(), &_index);
         }
 
         int16_t read_int16() {
-            return io::read_int16(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_int16(get_buf_pointer<uint8_t>(), &_index);
         }
 
         uint8_t read_uint8() {
-            return io::read_uint8(get_buf_pointer<uint8_t>(), &_index);
+            return little_endian::read_uint8(get_buf_pointer<uint8_t>(), &_index);
         }
 
         void write_uint8(const uint8_t value) {
-            io::write_uint8(value, get_buf_pointer<uint8_t>(), &_index);
+            little_endian::write_uint8(value, get_buf_pointer<uint8_t>(), &_index);
         }
 
         void write_uint16(const uint16_t value) {
-            io::write_uint16(value, get_buf_pointer<uint8_t>(), &_index);
+            little_endian::write_uint16(value, get_buf_pointer<uint8_t>(), &_index);
         }
 
         void write_int16(const int16_t value) {
-            io::write_int16(value, get_buf_pointer<uint8_t>(), &_index);
+            little_endian::write_int16(value, get_buf_pointer<uint8_t>(), &_index);
         }
 
         void write_int32(const int32_t value) {
-            io::write_int32(value, get_buf_pointer<uint8_t>(), &_index);
+            little_endian::write_int32(value, get_buf_pointer<uint8_t>(), &_index);
         }
 
         void write_float(const float value) {
-            io::write_float(value, get_buf_pointer<uint8_t>(), &_index);
+            little_endian::write_float(value, get_buf_pointer<uint8_t>(), &_index);
         }
 
         void read(uint8_t *dst, const int length) {
@@ -108,43 +108,45 @@ namespace aim::io::buffer {
         }
 
         template<typename T>
-        [[nodiscard]] T* get_buf_pointer() const {
-            return static_cast<T*>(_buf);
+        [[nodiscard]] T *get_buf_pointer() const {
+            return static_cast<T *>(_buf);
         }
 
     private:
-        void* _buf;
+        void *_buf;
         int _index;
         int _buf_length;
     };
 
-        enum class Type {
-            DSHOT1_MOTOR1,
-            DSHOT1_MOTOR2,
-            DSHOT1_MOTOR3,
-            DSHOT1_MOTOR4,
-            DSHOT2_MOTOR1,
-            DSHOT2_MOTOR2,
-            DSHOT2_MOTOR3,
-            DSHOT2_MOTOR4,
-            I2C3_RECV,
-            I2C3_SEND,
-            UART8_RECV,
-            UART8_SEND,
-            UART4_RECV,
-            UART4_SEND,
-            USART1_RECV,
-            USART1_SEND,
-            ADC1_RECV,
+    enum class Type {
+        DSHOT1_MOTOR1,
+        DSHOT1_MOTOR2,
+        DSHOT1_MOTOR3,
+        DSHOT1_MOTOR4,
+        DSHOT2_MOTOR1,
+        DSHOT2_MOTOR2,
+        DSHOT2_MOTOR3,
+        DSHOT2_MOTOR4,
+        I2C3_RECV,
+        I2C3_SEND,
+        UART8_RECV,
+        UART8_SEND,
+        UART4_RECV,
+        UART4_SEND,
+        USART1_RECV,
+        USART1_SEND,
+        ADC1_RECV,
 
-            ECAT_ARGS,
-            ECAT_SLAVE_TO_MASTER,
-            ECAT_MASTER_TO_SLAVE
-        };
+        ECAT_ARGS,
+        ECAT_SLAVE_TO_MASTER,
+        ECAT_MASTER_TO_SLAVE
+    };
 
-        void init_buffer_manager();
+    void init_buffer_manager();
 
-        Buffer *get_buffer(Type type);
+    Buffer *get_buffer(Type type);
+
+    void clear_all_buffers();
 }
 
 #endif //ECATV2_AX58100_H750_UNIVERSAL_BUFFER_MANAGER_H

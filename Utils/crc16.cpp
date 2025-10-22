@@ -18,7 +18,8 @@ namespace aim::algorithm::crc16 {
             return 0;
         }
         wExpected = get_CRC16_check_sum(pch_message, dw_length - 2, CRC16_INIT);
-        return (wExpected & 0xff) == pch_message[dw_length - 2] && (wExpected >> 8 & 0xff) == pch_message[dw_length - 1];
+        return (wExpected & 0xff) == pch_message[dw_length - 2] && (wExpected >> 8 & 0xff) == pch_message[
+                   dw_length - 1];
     }
 
     void append_CRC16_check_sum(uint8_t *pch_message, const uint32_t dw_length) {

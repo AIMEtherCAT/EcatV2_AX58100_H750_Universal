@@ -6,8 +6,6 @@
 #include "pid.h"
 
 
-
-
 uint16_t dshot_prepare_packet(uint16_t value) {
     uint16_t packet;
     uint8_t dshot_telemetry = 0;

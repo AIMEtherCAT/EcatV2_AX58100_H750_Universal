@@ -8,12 +8,13 @@
 #include <memory>
 #include <vector>
 
+#include "pid.hpp"
+
 extern "C" {
 #include "main.h"
 }
 
 namespace aim::ecat::task {
-
     using utils::ThreadSafeFlag;
     using namespace io;
     using namespace hardware;
@@ -47,29 +48,31 @@ namespace aim::ecat::task {
         virtual void run_task() {
         }
 
-        virtual void write_to_master(buffer::Buffer *slave_to_master_buf);
+        virtual void write_to_master(buffer::Buffer * /* slave_to_master_buf */) {
+        }
 
-        virtual void read_from_master(buffer::Buffer *master_to_slave_buf);
+        virtual void read_from_master(buffer::Buffer * /* master_to_slave_buf */) {
+        }
 
         virtual void exit() {
         }
 
         template<typename T = peripheral::Peripheral>
         [[nodiscard]] T *get_peripheral() const {
-            return static_cast<T *>(_peripheral);
+            return static_cast<T *>(peripheral_);
         }
 
     protected:
-        peripheral::Peripheral *_peripheral{};
+        peripheral::Peripheral *peripheral_{};
     };
 
     class CanRunnable : public CustomRunnable {
     public:
         ~CanRunnable() override = default;
 
-        FDCAN_HandleTypeDef *can_inst{};
+        FDCAN_HandleTypeDef *can_inst_{};
 
-        uint32_t can_id_type{};
+        uint32_t can_id_type_{};
 
         virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
     };
@@ -80,83 +83,116 @@ namespace aim::ecat::task {
 
         virtual void uart_recv(uint16_t size);
 
-        virtual void uart_err();
+        virtual void uart_err() {
+        }
 
-        virtual void uart_dma_tx_finished_callback();
+        virtual void uart_dma_tx_finished_callback() {
+        }
     };
 
+    // ReSharper disable once CppClassCanBeFinal
     class I2CRunnable : public CustomRunnable {
     public:
         ~I2CRunnable() override = default;
 
         virtual void i2c_recv(uint16_t size);
 
-        virtual void i2c_err();
+        virtual void i2c_err() {
+        }
 
-        virtual void i2c_dma_tx_finished_callback();
+        virtual void i2c_dma_tx_finished_callback() {
+        }
     };
 
-    class Task_DBUS_RC final : public UartRunnable {
-    public:
-        explicit Task_DBUS_RC(buffer::Buffer buffer);
+    namespace dbus_rc {
+        constexpr uint16_t DBUS_RC_CHANNAL_ERROR_VALUE = 1700;
 
-        void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+        class DBUS_RC final : public UartRunnable {
+        public:
+            explicit DBUS_RC(buffer::Buffer *buffer);
 
-        void uart_recv(uint16_t size) override;
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
 
-        void uart_err() override;
+            void uart_recv(uint16_t size) override;
 
-        void exit() override;
+            void uart_err() override;
 
-    private:
-        uint32_t _last_receive_time{};
-        uint8_t _buf[19]{};
-    };
+            void exit() override;
 
-    class Task_DJI_MOTOR final : public CanRunnable {
-    public:
-        explicit Task_DJI_MOTOR(buffer::Buffer buffer);
+        private:
+            uint32_t last_receive_time_{};
+            uint8_t buf_[19]{};
+        };
+    }
 
-        void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+    namespace dji_motor {
+        struct MotorReport {
+            std::atomic<uint16_t> ecd{};
+            std::atomic<int16_t> rpm{};
+            std::atomic<int16_t> current{};
+            std::atomic<uint8_t> temperature{};
+            std::atomic<uint32_t> last_receive_time{};
+        };
 
-        void read_from_master(buffer::Buffer *master_to_slave_buf) override;
-
-        void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
-
-        void run_task() override;
-
-        void exit() override;
-
-    private:
-
-        struct dji_motor_status_t {
-            uint16_t ecd;
-            int16_t rpm;
-            int16_t current;
-            uint8_t temperature;
-        } ;
-
-        enum class dji_ctrl_mode_e : uint8_t {
+        enum class CtrlMode : uint8_t {
             OPENLOOP_CURRENT = 0x01,
             SPEED = 0x02,
             SINGLE_ROUND_POSITION = 0x03
         };
 
-        enum class dji_motor_status_e {
-
+        struct ControlCommand {
+            std::atomic<bool> is_enable;
+            std::atomic<int16_t> cmd;
         };
 
-        struct dji_motor_t {
-            bool enabled{false};
-            dji_ctrl_mode_e control_mode{};
-            dji_motor_status_t status{};
+        struct Motor {
+            bool is_exist{false};
 
+            MotorReport report{};
+            CtrlMode mode{};
+            ControlCommand command{};
+            uint32_t report_packet_id{};
+
+            algorithms::PID speed_pid{};
+            algorithms::PID angle_pid{};
+
+            [[nodiscard]] bool is_online() const {
+                return HAL_GetTick() - report.last_receive_time.load(std::memory_order_acquire) <= 50;
+            }
         };
 
-        FDCAN_TxHeaderTypeDef _shared_tx_header{};
-        uint8_t _shared_tx_buf[8]{};
+        inline int16_t calculate_err(const uint16_t current_angle, const uint16_t target_angle) {
+            constexpr int total_positions = 8192;
+            const int clockwise_difference = (target_angle - current_angle
+                                              + total_positions) % total_positions;
+            const int counterclockwise_difference = (current_angle - target_angle
+                                                     + total_positions) % total_positions;
+            if (clockwise_difference <= counterclockwise_difference) {
+                return static_cast<int16_t>(clockwise_difference);
+            }
+            return static_cast<int16_t>(-counterclockwise_difference);
+        }
 
-    };
+        class DJI_MOTOR final : public CanRunnable {
+        public:
+            explicit DJI_MOTOR(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+
+            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+            void run_task() override;
+
+            void exit() override;
+
+        private:
+            FDCAN_TxHeaderTypeDef shared_tx_header_{};
+            uint8_t shared_tx_buf_[8]{};
+            Motor motors_[4]{};
+        };
+    }
 }
 
 #endif //TASK_DEFS_H

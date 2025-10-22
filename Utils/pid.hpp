@@ -6,14 +6,15 @@ namespace aim::algorithms {
     public:
         explicit PID(const float kp = 0.0f, const float ki = 0.0f, const float kd = 0.0f,
                      const float max_out = 0.0f, const float max_iout = 0.0f) : kp_(kp), ki_(ki), kd_(kd),
-                                                                    deadband_(0.0f),
-                                                                    out_max_(max_out), i_max_(max_iout),
-                                                                    error_max_(9999999.0f),
-                                                                    set_point_(0.0f), set_point_last_(0.0f),
-                                                                    last_error_(0.0f), pre_error_(0.0f),
-                                                                    sum_error_(0.0f), d_error_(0.0f),
-                                                                    p_out_(0.0f), i_out_(0.0f), d_out_(0.0f),
-                                                                    out_(0.0f) {}
+            deadband_(0.0f),
+            out_max_(max_out), i_max_(max_iout),
+            error_max_(9999999.0f),
+            set_point_(0.0f), set_point_last_(0.0f),
+            last_error_(0.0f), pre_error_(0.0f),
+            sum_error_(0.0f), d_error_(0.0f),
+            p_out_(0.0f), i_out_(0.0f), d_out_(0.0f),
+            out_(0.0f) {
+        }
 
         float calculate(float ref, float set);
 
@@ -24,6 +25,14 @@ namespace aim::algorithms {
         void set_setpoint(float sp);
 
         [[nodiscard]] float get_output() const;
+
+        void basic_init(const float kp, const float ki, const float kd, const float max_out, float max_i_out) {
+            kp_ = kp;
+            ki_ = ki;
+            kd_ = kd;
+            out_max_ = max_out;
+            i_max_ = max_i_out;
+        }
 
         void set_kp(const float kp) { kp_ = kp; }
         void set_ki(const float ki) { ki_ = ki; }
@@ -56,9 +65,15 @@ namespace aim::algorithms {
         float out_;
     };
 
-    float limit_max_min(float value, float max, float min);
-
-
+    inline float limit_max_min(const float value, const float max, const float min) {
+        if (value >= max) {
+            return max;
+        }
+        if (value <= min) {
+            return min;
+        }
+        return value;
+    }
 }
 
 #endif

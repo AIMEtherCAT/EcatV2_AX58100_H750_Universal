@@ -143,44 +143,52 @@ namespace aim::hardware::peripheral {
         HAL_ADC_DeInit(&hadc1);
     }
 
-        static std::map<Type, std::unique_ptr<Peripheral> > instances;
+    static std::map<Type, std::unique_ptr<Peripheral> > instances;
 
-        void init_peripheral_manager() {
-            if (!instances.empty()) return;
+    void init_peripheral_manager() {
+        if (!instances.empty()) return;
 
-            osMutexDef(ADC1InitMutex);
-            ADC1InitMutexHandle = osMutexCreate(osMutex(ADC1InitMutex));
-            osMutexDef(CANInitMutex);
-            CANInitMutexHandle = osMutexCreate(osMutex(CANInitMutex));
-            osMutexDef(USART1InitMutex);
-            USART1InitMutexHandle = osMutexCreate(osMutex(USART1InitMutex));
-            osMutexDef(UART4InitMutex);
-            UART4InitMutexHandle = osMutexCreate(osMutex(UART4InitMutex));
-            osMutexDef(UART8InitMutex);
-            UART8InitMutexHandle = osMutexCreate(osMutex(UART8InitMutex));
-            osMutexDef(TIM2InitMutex);
-            TIM2InitMutexHandle = osMutexCreate(osMutex(TIM2InitMutex));
-            osMutexDef(TIM3InitMutex);
-            TIM3InitMutexHandle = osMutexCreate(osMutex(TIM3InitMutex));
-            osMutexDef(I2C3InitMutex);
-            I2C3InitMutexHandle = osMutexCreate(osMutex(I2C3InitMutex));
+        osMutexDef(ADC1InitMutex);
+        ADC1InitMutexHandle = osMutexCreate(osMutex(ADC1InitMutex));
+        osMutexDef(CANInitMutex);
+        CANInitMutexHandle = osMutexCreate(osMutex(CANInitMutex));
+        osMutexDef(USART1InitMutex);
+        USART1InitMutexHandle = osMutexCreate(osMutex(USART1InitMutex));
+        osMutexDef(UART4InitMutex);
+        UART4InitMutexHandle = osMutexCreate(osMutex(UART4InitMutex));
+        osMutexDef(UART8InitMutex);
+        UART8InitMutexHandle = osMutexCreate(osMutex(UART8InitMutex));
+        osMutexDef(TIM2InitMutex);
+        TIM2InitMutexHandle = osMutexCreate(osMutex(TIM2InitMutex));
+        osMutexDef(TIM3InitMutex);
+        TIM3InitMutexHandle = osMutexCreate(osMutex(TIM3InitMutex));
+        osMutexDef(I2C3InitMutex);
+        I2C3InitMutexHandle = osMutexCreate(osMutex(I2C3InitMutex));
 
-            instances[Type::PERIPHERAL_USART1] = std::make_unique<USART1Peripheral>(USART1InitMutexHandle,
-                &huart1, buffer::get_buffer(buffer::Type::USART1_SEND), buffer::get_buffer(buffer::Type::USART1_RECV));
-            instances[Type::PERIPHERAL_UART4] = std::make_unique<UART4Peripheral>(UART4InitMutexHandle,
-                &huart4, buffer::get_buffer(buffer::Type::UART4_SEND), buffer::get_buffer(buffer::Type::UART4_RECV));
-            instances[Type::PERIPHERAL_UART8] = std::make_unique<UART8Peripheral>(UART8InitMutexHandle,
-                &huart8, buffer::get_buffer(buffer::Type::UART8_SEND), buffer::get_buffer(buffer::Type::UART8_RECV));
-            instances[Type::PERIPHERAL_I2C3] = std::make_unique<I2C3Peripheral>(I2C3InitMutexHandle);
-            instances[Type::PERIPHERAL_TIM2] = std::make_unique<TIM2Peripheral>(TIM2InitMutexHandle);
-            instances[Type::PERIPHERAL_TIM3] = std::make_unique<TIM3Peripheral>(TIM3InitMutexHandle);
-            instances[Type::PERIPHERAL_CAN] = std::make_unique<CANPeripheral>(CANInitMutexHandle);
+        instances[Type::PERIPHERAL_USART1] = std::make_unique<USART1Peripheral>(USART1InitMutexHandle,
+            &huart1, buffer::get_buffer(buffer::Type::USART1_SEND), buffer::get_buffer(buffer::Type::USART1_RECV));
+        instances[Type::PERIPHERAL_UART4] = std::make_unique<UART4Peripheral>(UART4InitMutexHandle,
+                                                                              &huart4,
+                                                                              buffer::get_buffer(
+                                                                                  buffer::Type::UART4_SEND),
+                                                                              buffer::get_buffer(
+                                                                                  buffer::Type::UART4_RECV));
+        instances[Type::PERIPHERAL_UART8] = std::make_unique<UART8Peripheral>(UART8InitMutexHandle,
+                                                                              &huart8,
+                                                                              buffer::get_buffer(
+                                                                                  buffer::Type::UART8_SEND),
+                                                                              buffer::get_buffer(
+                                                                                  buffer::Type::UART8_RECV));
+        instances[Type::PERIPHERAL_I2C3] = std::make_unique<I2C3Peripheral>(I2C3InitMutexHandle);
+        instances[Type::PERIPHERAL_TIM2] = std::make_unique<TIM2Peripheral>(TIM2InitMutexHandle);
+        instances[Type::PERIPHERAL_TIM3] = std::make_unique<TIM3Peripheral>(TIM3InitMutexHandle);
+        instances[Type::PERIPHERAL_CAN] = std::make_unique<CANPeripheral>(CANInitMutexHandle);
+    }
+
+    Peripheral *get_peripheral(const Type type) {
+        if (const auto it = instances.find(type); it != instances.end()) {
+            return it->second.get();
         }
-
-        Peripheral *get_peripheral(const Type type) {
-            if (const auto it = instances.find(type); it != instances.end()) {
-                return it->second.get();
-            }
-            return nullptr;
-        }
+        return nullptr;
+    }
 }

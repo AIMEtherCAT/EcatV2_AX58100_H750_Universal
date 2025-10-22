@@ -4,7 +4,6 @@
 #include <cstdint>
 
 namespace aim::algorithm::crc16 {
-
     inline uint16_t CRC16_INIT = 0xffff;
     const uint16_t wCRC_table[256] =
     {

@@ -12,7 +12,6 @@ extern "C" {
 }
 
 
-
 void init_adc_buf() {
     memset(adc_buf, 0, sizeof(adc_buf));
 }

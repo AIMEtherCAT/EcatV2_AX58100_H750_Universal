@@ -85,5 +85,5 @@ void App_Vanilla_PWM::exit() {
 }
 
 uint32_t App_Vanilla_PWM::calc_compare(uint16_t expected_high_pulse) const {
-    return (uint32_t) ((((double) expected_high_pulse) / ((double) this->expected_period)) * this->best_arr + 0.5);
+    return (uint32_t)((((double) expected_high_pulse) / ((double) this->expected_period)) * this->best_arr + 0.5);
 }
