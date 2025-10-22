@@ -6,8 +6,8 @@
 #include "peripheral_manager.hpp"
 #include "buffer_manager.hpp"
 #include "settings.h"
-#include "soes_application.h"
-#include "task_manager.h"
+#include "soes_application.hpp"
+#include "task_manager.hpp"
 
 extern "C" {
     #include "ecat_slv.h"
@@ -17,10 +17,10 @@ extern "C" {
 extern esc_cfg_t config;
 
 void initialize() {
-    init_buffer_manager();
-    init_peripheral_manager();
-    init_task_manager();
-    init_soes_buffers();
+    aim::io::buffer::init_buffer_manager();
+    aim::hardware::peripheral::init_peripheral_manager();
+    aim::ecat::task::init_task_manager();
+    aim::ecat::application::init_soes_buffers();
 
     // 10khz
     __HAL_TIM_SET_PRESCALER(&htim17, LED_PSC);

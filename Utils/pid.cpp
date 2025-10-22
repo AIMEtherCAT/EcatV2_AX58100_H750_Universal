@@ -1,91 +1,58 @@
-#include "pid.h"
+#include "pid.hpp"
 #include <cmath>
 
-void pid_init(pid_t *pid, const float p, const float i, const float d, const float max_out, const float max_iout) {
-    if (pid == nullptr) {
-        return;
+namespace aim::algorithms {
+    float PID::calculate(const float ref, const float set) {
+        if (std::isnan(sum_error_)) {
+            sum_error_ = 0.0f;
+        }
+
+        set_point_last_ = set_point_;
+        set_point_ = set;
+        pre_error_ = set_point_ - ref;
+
+        if (std::fabs(pre_error_) < deadband_) {
+            return 0.0f;
+        }
+
+        d_error_ = pre_error_ - last_error_;
+
+        if (pre_error_ > -error_max_ && pre_error_ < error_max_) {
+            sum_error_ += (pre_error_ + last_error_) / 2.0f;
+        }
+
+        last_error_ = pre_error_;
+
+        sum_error_ = limit_max_min(sum_error_, i_max_, -i_max_);
+
+        p_out_ = kp_ * pre_error_;
+        i_out_ = ki_ * sum_error_;
+        d_out_ = kd_ * d_error_;
+
+        out_ = limit_max_min(p_out_ + i_out_ + d_out_, out_max_, -out_max_);
+
+        return out_;
     }
 
-    pid->Kp = p;
-    pid->Ki = i;
-    pid->Kd = d;
-    pid->OutMax = max_out;
-    pid->IMax = max_iout;
-
-    pid->SetPoint = 0.0f;
-    pid->SetPointLast = 0.0f;
-    pid->deadband = 0.0f;
-
-    pid->LastError = 0.0f;
-    pid->PreError = 0.0f;
-    pid->SumError = 0.0f;
-    pid->dError = 0.0f;
-
-    pid->ErrorMax = 9999999.0f;
-
-    pid->POut = 0.0f;
-    pid->IOut = 0.0f;
-    pid->DOut = 0.0f;
-}
-
-float pid_calculate(pid_t *pid, const float ref, const float set) {
-    if (std::isnan(pid->SumError)) {
-        pid->SumError = 0;
+    float PID::calculate(const float ref) {
+        return calculate(ref, set_point_);
     }
 
-    pid->SetPointLast = pid->SetPoint;
-    pid->SetPoint = set;
-    pid->PreError = pid->SetPoint - ref;
-    if (std::fabsf(pid->PreError) < pid->deadband) {
-        return 0;
-    }
-    pid->dError = pid->PreError - pid->LastError;
-
-    pid->SetPointLast = pid->SetPoint;
-
-    if (pid->PreError > -pid->ErrorMax && pid->PreError < pid->ErrorMax) {
-        pid->SumError += (pid->PreError + pid->LastError) / 2;
+    void PID::clear() {
+        set_point_ = 0.0f;
+        set_point_last_ = 0.0f;
+        last_error_ = 0.0f;
+        pre_error_ = 0.0f;
+        sum_error_ = 0.0f;
+        d_error_ = 0.0f;
+        p_out_ = i_out_ = d_out_ = out_ = 0.0f;
     }
 
-    pid->LastError = pid->PreError;
-
-    if (pid->SumError >= pid->IMax) {
-        pid->SumError = pid->IMax;
-    } else if (pid->SumError <= -pid->IMax) {
-        pid->SumError = -pid->IMax;
+    void PID::set_setpoint(const float sp) {
+        set_point_ = sp;
     }
 
-    pid->POut = pid->Kp * pid->PreError;
-    pid->IOut = pid->Ki * pid->SumError;
-    pid->DOut = pid->Kd * pid->dError;
-
-    pid->out = LIMIT_MAX_MIN(pid->POut + pid->IOut + pid->DOut, pid->OutMax, -pid->OutMax);
-
-    return pid->out;
-}
-
-float pid_calculate(pid_t *pid, const float ref) {
-    return pid_calculate(pid, ref, pid->SetPoint);
-}
-
-void pid_clear(pid_t *pid) {
-    if (pid == nullptr) {
-        return;
+    float PID::get_output() const {
+        return out_;
     }
-
-    pid->SetPoint = 0.0f;
-    pid->SetPointLast = 0.0f;
-    pid->deadband = 0.0f;
-
-
-    pid->LastError = 0.0f;
-    pid->PreError = 0.0f;
-    pid->SumError = 0.0f;
-    pid->dError = 0.0f;
-
-    pid->ErrorMax = 9999999.0f;
-
-    pid->POut = 0.0f;
-    pid->IOut = 0.0f;
-    pid->DOut = 0.0f;
 }

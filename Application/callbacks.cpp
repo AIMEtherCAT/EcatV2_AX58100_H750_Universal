@@ -1,9 +1,8 @@
 //
 // Created by Hang XU on 21/10/2025.
 //
-#include <vector>
 #include "peripheral_manager.hpp"
-#include "task_defs.h"
+#include "task_manager.hpp"
 
 extern "C" {
 #include "fdcan.h"
@@ -14,23 +13,24 @@ extern "C" {
 #include "cmsis_os.h"
 }
 
-extern std::vector<std::shared_ptr<runnable_conf> > run_confs;
+using namespace aim::ecat::task;
+using namespace aim::hardware;
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
-        static_cast<UartPeripheral *>(get_peripheral(PeripheralType::PERIPHERAL_USART1))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_USART1))->is_busy.clear(); // NOLINT
     } else if (huart->Instance == UART4) {
-        static_cast<UartPeripheral *>(get_peripheral(PeripheralType::PERIPHERAL_UART4))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART4))->is_busy.clear(); // NOLINT
     } else if (huart->Instance == UART8) {
-        static_cast<UartPeripheral *>(get_peripheral(PeripheralType::PERIPHERAL_UART8))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy.clear(); // NOLINT
     }
 
     for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
-        if (huart->Instance != conf->runnable->get_peripheral<UartPeripheral>()->_huart->Instance) {
+        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->_huart->Instance) {
             continue;
         }
 
@@ -45,11 +45,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
-        if (huart->Instance != conf->runnable->get_peripheral<UartPeripheral>()->_huart->Instance) {
+        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->_huart->Instance) {
             continue;
         }
 
-        conf->runnable->get_peripheral<UartPeripheral>()->_recv_buf->reset_index();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->_recv_buf->reset_index();
         static_cast<UartRunnable *>(conf->runnable.get())->uart_recv(Size); // NOLINT
     }
 }
@@ -60,12 +60,12 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
-        if (huart->Instance != conf->runnable->get_peripheral<UartPeripheral>()->_huart->Instance) {
+        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->_huart->Instance) {
             continue;
         }
 
-        conf->runnable->get_peripheral<UartPeripheral>()->_recv_buf->reset();
-        conf->runnable->get_peripheral<UartPeripheral>()->_send_buf->reset();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->_recv_buf->reset();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->_send_buf->reset();
         static_cast<UartRunnable *>(conf->runnable.get())->uart_err(); // NOLINT
     }
 }

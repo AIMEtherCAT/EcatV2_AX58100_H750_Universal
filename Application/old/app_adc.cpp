@@ -2,7 +2,7 @@
 // Created by Hang XU on 30/06/2025.
 //
 #include "adc_processor.h"
-#include "io_utils.h"
+#include "io_utils.hpp"
 #include "../task_defs.h"
 #include "../task_manager.h"
 

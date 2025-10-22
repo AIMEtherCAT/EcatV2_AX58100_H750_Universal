@@ -5,7 +5,7 @@
 #ifndef TASK_DEFS_H
 #define TASK_DEFS_H
 
-#include "pid.h"
+#include "pid.hpp"
 #include "task_manager.h"
 
 #define DJIRC_APP_ID 1

@@ -76,7 +76,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
 #        "Application/app_lkmotor.cpp"
 
         "Utils/pid.cpp"
-        "Utils/crc.cpp"
+        "Utils/crc16.cpp"
         "Utils/initializer.cpp"
         "Utils/peripheral_manager.cpp"
         "Utils/io_utils.cpp"

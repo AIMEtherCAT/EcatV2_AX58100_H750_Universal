@@ -25,8 +25,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "soes_application.h"
-#include "task_manager.h"
+#include "c_task_warpper.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
