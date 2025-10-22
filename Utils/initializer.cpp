@@ -23,9 +23,8 @@ void initialize() {
     aim::ecat::application::init_soes_env();
 
     // 10khz
-    __HAL_TIM_SET_PRESCALER(&htim17, LED_PSC);
-    // task not loaded, 4hz / 250ms
-    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_250MS_ARR);
+    __HAL_TIM_SET_PRESCALER(&htim17, aim::ecat::task::LED_PSC);
+    __HAL_TIM_SET_AUTORELOAD(&htim17, aim::ecat::task::LED_TASK_NOT_LOADED_ARR);
     HAL_TIM_Base_Start_IT(&htim17);
 
     ecat_slv_init(&config);

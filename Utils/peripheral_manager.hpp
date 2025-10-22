@@ -5,65 +5,16 @@
 #ifndef DEVICE_CONF_H
 #define DEVICE_CONF_H
 
-#include <atomic>
-
 #include "buffer_manager.hpp"
 #include "cmsis_os.h"
+#include "thread_safe_utils.hpp"
 
 extern "C" {
 #include "usart.h"
 #include "fdcan.h"
 #include "i2c.h"
-}
-
-namespace aim::utils {
-    class ThreadSafeFlag {
-    public:
-        ThreadSafeFlag() = default;
-
-        explicit ThreadSafeFlag(const bool cond) {
-            if (cond) {
-                set();
-            }
-        }
-
-        void set() { flag.store(true, std::memory_order_relaxed); }
-        void clear() { flag.store(false, std::memory_order_relaxed); }
-        [[nodiscard]] bool get() const { return flag.load(std::memory_order_relaxed); }
-
-    private:
-        std::atomic<bool> flag{false};
-    };
-
-    class ThreadSafeCounter {
-    public:
-        explicit ThreadSafeCounter(const uint32_t init = 0) : value(init) {
-        }
-
-
-        void increment() {
-            value.fetch_add(1, std::memory_order_relaxed);
-        }
-
-        void decrement() {
-            value.fetch_sub(1, std::memory_order_relaxed);
-        }
-
-        [[nodiscard]] uint32_t get() const {
-            return value.load(std::memory_order_relaxed);
-        }
-
-        void set(const uint32_t v) {
-            value.store(v, std::memory_order_relaxed);
-        }
-
-        void reset() {
-            set(0);
-        }
-
-    private:
-        std::atomic<uint32_t> value;
-    };
+#include "tim.h"
+#include "adc.h"
 }
 
 namespace aim::hardware::peripheral {
@@ -147,7 +98,7 @@ namespace aim::hardware::peripheral {
             is_busy.set();
         }
 
-        utils::ThreadSafeFlag is_busy;
+        utils::thread_safety::ThreadSafeFlag is_busy;
         UART_HandleTypeDef *_huart;
         buffer::Buffer *_send_buf;
         buffer::Buffer *_recv_buf;

@@ -83,9 +83,9 @@ namespace aim::ecat::application {
 
         memset(Obj.master2slave, 0, 80);
         memset(Obj.slave2master, 0, 80);
-        // Obj.sdo_len = 0;
-        // Obj.master_status = MASTER_UNKNOWN;
-        // Obj.slave_status = SLAVE_INITIALIZING;
+        Obj.sdo_len = 0;
+        Obj.master_status = MASTER_UNKNOWN;
+        Obj.slave_status = SLAVE_INITIALIZING;
 
         buffer::get_buffer(buffer::Type::ECAT_ARGS)->reset();
         buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->reset();
@@ -208,7 +208,7 @@ namespace aim::ecat::application {
 // for c warppers
 using namespace aim::ecat::application;
 
-[[noreturn]] void soes_application() {
+void soes_application(const void *) {
     soes_application_impl();
 }
 

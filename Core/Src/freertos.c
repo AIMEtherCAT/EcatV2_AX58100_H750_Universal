@@ -94,8 +94,6 @@ void MX_FREERTOS_Init(void) {
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
-  /* Create the mutex(es) */
-
 
   /* USER CODE BEGIN RTOS_MUTEX */
     /* add mutexes, ... */

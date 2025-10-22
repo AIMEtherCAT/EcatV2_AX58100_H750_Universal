@@ -32,6 +32,8 @@ namespace aim::io {
         void write_int32(int32_t value, uint8_t *buf, int *offset);
 
         void write_uint16(uint16_t value, uint8_t *buf, int *offset);
+
+        void write_uint32(uint32_t value, uint8_t *buf, int *offset);
     }
 
     namespace big_endian {

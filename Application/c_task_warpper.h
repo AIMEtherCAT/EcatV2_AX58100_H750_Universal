@@ -9,9 +9,9 @@
 extern "C" {
 #endif
 
-[[noreturn]] void soes_application();
+void soes_application(const void *);
 
-[[noreturn]] void task_manager();
+void task_manager(const void *);
 
 #ifdef __cplusplus
 }

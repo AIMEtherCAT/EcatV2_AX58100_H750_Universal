@@ -12,6 +12,7 @@ namespace aim::ecat::task::dji_motor {
 
         period = buffer->read_uint16();
 
+        can_id_type_ = FDCAN_STANDARD_ID;
         shared_tx_header_.Identifier = buffer->read_uint32();
         shared_tx_header_.IdType = FDCAN_STANDARD_ID;
         shared_tx_header_.TxFrameType = FDCAN_DATA_FRAME;
@@ -48,7 +49,7 @@ namespace aim::ecat::task::dji_motor {
             }
             switch (buffer->read_uint8()) {
                 case 0x01: {
-                    motor.mode = CtrlMode::OPENLOOP_CURRENT;
+                    motor.mode = CtrlMode::OPEN_LOOP_CURRENT;
                     break;
                 }
                 case 0x02: {
@@ -92,10 +93,10 @@ namespace aim::ecat::task::dji_motor {
                 continue;
             }
             slave_to_master_buf->write_uint8(motor.is_online());
-            slave_to_master_buf->write_uint16(motor.report.ecd.load(std::memory_order_acquire));
-            slave_to_master_buf->write_int16(motor.report.rpm.load(std::memory_order_acquire));
-            slave_to_master_buf->write_int16(motor.report.current.load(std::memory_order_acquire));
-            slave_to_master_buf->write_uint8(motor.report.temperature.load(std::memory_order_acquire));
+            slave_to_master_buf->write_uint16(motor.report.ecd.get());
+            slave_to_master_buf->write_int16(motor.report.rpm.get());
+            slave_to_master_buf->write_int16(motor.report.current.get());
+            slave_to_master_buf->write_uint8(motor.report.temperature.get());
         }
     }
 
@@ -104,8 +105,8 @@ namespace aim::ecat::task::dji_motor {
             if (!motor.is_exist) {
                 continue;
             }
-            motor.command.is_enable.store(master_to_slave_buf->read_uint8(), std::memory_order_release);
-            motor.command.cmd.store(master_to_slave_buf->read_int16(), std::memory_order_release);
+            motor.command.is_enable.set(master_to_slave_buf->read_uint8());
+            motor.command.cmd.set(master_to_slave_buf->read_int16());
         }
     }
 
@@ -115,11 +116,11 @@ namespace aim::ecat::task::dji_motor {
                 continue;
             }
             int index = 0;
-            motor.report.ecd.store(big_endian::read_uint16(rx_data, &index), std::memory_order_release);
-            motor.report.rpm.store(big_endian::read_int16(rx_data, &index), std::memory_order_release);
-            motor.report.current.store(big_endian::read_int16(rx_data, &index), std::memory_order_release);
-            motor.report.temperature.store(big_endian::read_uint8(rx_data, &index), std::memory_order_release);
-            motor.report.last_receive_time.store(HAL_GetTick(), std::memory_order_release);
+            motor.report.ecd.set(big_endian::read_uint16(rx_data, &index));
+            motor.report.rpm.set(big_endian::read_int16(rx_data, &index));
+            motor.report.current.set(big_endian::read_int16(rx_data, &index));
+            motor.report.temperature.set(big_endian::read_uint8(rx_data, &index));
+            motor.report.last_receive_time.set_current();
             return;
         }
     }
@@ -134,30 +135,30 @@ namespace aim::ecat::task::dji_motor {
                 continue;
             }
 
-            if (motor.command.is_enable.load(std::memory_order_acquire)) {
+            if (motor.command.is_enable.get()) {
                 switch (motor.mode) {
-                    case CtrlMode::OPENLOOP_CURRENT: {
-                        big_endian::write_int16(motor.command.cmd.load(std::memory_order_acquire), shared_tx_buf_,
+                    case CtrlMode::OPEN_LOOP_CURRENT: {
+                        big_endian::write_int16(motor.command.cmd.get(), shared_tx_buf_,
                                                 &index);
                         break;
                     }
                     case CtrlMode::SPEED: {
                         big_endian::write_int16(
                             static_cast<int16_t>(motor.speed_pid.calculate(
-                                motor.report.rpm.load(std::memory_order_acquire),
-                                motor.command.cmd.load(std::memory_order_acquire))),
+                                motor.report.rpm.get(),
+                                motor.command.cmd.get())),
                             shared_tx_buf_, &index);
                         break;
                     }
                     case CtrlMode::SINGLE_ROUND_POSITION: {
                         big_endian::write_int16(
                             static_cast<int16_t>(motor.speed_pid.calculate(
-                                motor.report.rpm.load(std::memory_order_acquire),
+                                motor.report.rpm.get(),
                                 static_cast<float>(-static_cast<int16_t>(motor.speed_pid.calculate(
                                     0,
                                     calculate_err(
-                                        motor.report.ecd.load(std::memory_order_acquire),
-                                        motor.command.cmd.load(std::memory_order_acquire))
+                                        motor.report.ecd.get(),
+                                        motor.command.cmd.get())
                                 )))
                             )),
                             shared_tx_buf_, &index);
@@ -169,10 +170,6 @@ namespace aim::ecat::task::dji_motor {
             }
         }
 
-        HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_);
-    }
-
-    void DJI_MOTOR::exit() {
-        get_peripheral()->deinit();
+        send_packet();
     }
 }

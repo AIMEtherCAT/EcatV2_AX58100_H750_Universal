@@ -5,9 +5,7 @@
 #ifndef ECATV2_AX58100_H750_UNIVERSAL_BUFFER_MANAGER_H
 #define ECATV2_AX58100_H750_UNIVERSAL_BUFFER_MANAGER_H
 
-#include <cstring>
-
-#include "cstdint"
+#include "cstring"
 #include "cmsis_os.h"
 #include "io_utils.hpp"
 

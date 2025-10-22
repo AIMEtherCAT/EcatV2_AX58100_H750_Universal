@@ -6,7 +6,6 @@
 
 #include "buffer_manager.hpp"
 #include "peripheral_manager.hpp"
-#include "settings.h"
 #include "task_defs.hpp"
 #include "c_task_warpper.h"
 #include "soes_application.hpp"
@@ -24,9 +23,9 @@ void task_thread_func(void const *argument) {
 namespace aim::ecat::task {
     osMutexId runConfMutexHandle;
 
-    utils::ThreadSafeCounter terminated_counter;
+    ThreadSafeCounter terminated_counter;
 
-    utils::ThreadSafeCounter *get_terminated_counter() {
+    ThreadSafeCounter *get_terminated_counter() {
         return &terminated_counter;
     }
 
@@ -85,6 +84,10 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::HIPNUC_IMU_CAN): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<hipnuc_imu::HIPNUC_IMU_CAN>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::DSHOT): {
@@ -104,7 +107,6 @@ namespace aim::ecat::task {
                         .buffer = nullptr,
                         .controlblock = nullptr
                     };
-
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::ONBOARD_PWM): {
@@ -123,9 +125,26 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::SBUS_RC): {
+                    conf->is_uart_task.set();
+                    conf->runnable = std::make_unique<sbus_rc::SBUS_RC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::DM_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<dm_motor::DM_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    conf->thread_def = {
+                        .name = nullptr,
+                        .pthread = task_thread_func,
+                        .tpriority = osPriorityRealtime,
+                        .instances = 0,
+                        .stacksize = 1024,
+                        .buffer = nullptr,
+                        .controlblock = nullptr
+                    };
                     break;
                 }
                 default: {
@@ -151,13 +170,11 @@ namespace aim::ecat::task {
 
             if (last_slave_ready_flag.get() != application::get_is_slave_ready()->get()) {
                 if (application::get_is_slave_ready()->get()) {
-                    // task loaded, 40hz / 25ms
-                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_25MS_ARR);
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_NOT_LOADED_ARR);
                     __HAL_TIM_SET_COUNTER(&htim17, 0);
                     last_slave_ready_flag.set();
                 } else {
-                    // task not loaded, 4hz / 250ms
-                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_250MS_ARR);
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_LOADED_ARR);
                     __HAL_TIM_SET_COUNTER(&htim17, 0);
                     last_slave_ready_flag.clear();
                 }
@@ -174,6 +191,6 @@ namespace aim::ecat::task {
     }
 }
 
-[[noreturn]] void task_manager() {
+void task_manager(const void *) {
     aim::ecat::task::task_manager_impl();
 }

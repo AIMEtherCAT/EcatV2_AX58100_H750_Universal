@@ -7,15 +7,17 @@
 
 #include <memory>
 #include <vector>
+#include <atomic>
 
 #include "pid.hpp"
+#include "thread_safe_utils.hpp"
 
 extern "C" {
 #include "main.h"
 }
 
 namespace aim::ecat::task {
-    using utils::ThreadSafeFlag;
+    using namespace utils::thread_safety;
     using namespace io;
     using namespace hardware;
 
@@ -48,13 +50,16 @@ namespace aim::ecat::task {
         virtual void run_task() {
         }
 
-        virtual void write_to_master(buffer::Buffer * /* slave_to_master_buf */) {
+        virtual void write_to_master(buffer::Buffer *slave_to_master_buf) {
+            UNUSED(slave_to_master_buf);
         }
 
-        virtual void read_from_master(buffer::Buffer * /* master_to_slave_buf */) {
+        virtual void read_from_master(buffer::Buffer *master_to_slave_buf) {
+            UNUSED(master_to_slave_buf);
         }
 
         virtual void exit() {
+            get_peripheral()->deinit();
         }
 
         template<typename T = peripheral::Peripheral>
@@ -75,6 +80,14 @@ namespace aim::ecat::task {
         uint32_t can_id_type_{};
 
         virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
+
+        void send_packet() const {
+            HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_);
+        }
+
+    protected:
+        FDCAN_TxHeaderTypeDef shared_tx_header_{};
+        uint8_t shared_tx_buf_[8]{};
     };
 
     class UartRunnable : public CustomRunnable {
@@ -117,32 +130,131 @@ namespace aim::ecat::task {
 
             void uart_err() override;
 
-            void exit() override;
+        private:
+            ThreadSafeTimestamp last_receive_time_{};
+            ThreadSafeBuffer buf_{18};
+        };
+    }
+
+    namespace dm_motor {
+        enum class CtrlMode : uint32_t {
+            MIT = 1,
+            POSITION_WITH_SPEED_LIMIT = 2,
+            SPEED = 3
+        };
+
+        enum class State {
+            OFFLINE,
+            SENDING_MODE_CHANGE,
+            PENDING_MODE_CHANGE,
+            MODE_CHANGED,
+            MODE_CHANGE_BYPASSED,
+        };
+
+        struct MotorState {
+            ThreadSafeValue<State> state{};
+            ThreadSafeFlag is_motor_enabled{false};
+            ThreadSafeTimestamp enter_timestamp{};
+        };
+
+        struct ControlCommand {
+            ThreadSafeFlag is_enable{};
+            ThreadSafeBuffer cmd{8};
+        };
+
+        class DM_MOTOR final : public CanRunnable {
+        public:
+            explicit DM_MOTOR(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+
+            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+            void run_task() override;
 
         private:
-            uint32_t last_receive_time_{};
-            uint8_t buf_[19]{};
+            // motor to ctrl
+            uint32_t master_id_{};
+            // ctrl to motor
+            uint32_t can_id_{};
+
+            ThreadSafeBuffer report_{8};
+            ThreadSafeTimestamp last_receive_time{};
+
+            ControlCommand cmd_{};
+            CtrlMode mode_{};
+            MotorState state_{};
+            uint8_t mode_change_buf_[8]{};
+
+            void change_state(const State new_state) {
+                state_.state.set(new_state);
+                state_.enter_timestamp.set_current();
+            }
+
+            [[nodiscard]] uint32_t get_state_enter_time() const {
+                return state_.enter_timestamp.get();
+            }
+
+            [[nodiscard]] State get_current_state() const {
+                return state_.state.get();
+            }
+
+            [[nodiscard]] uint32_t get_control_packet_id() const {
+                switch (mode_) {
+                    case CtrlMode::POSITION_WITH_SPEED_LIMIT: {
+                        return can_id_ + 0x100;
+                    }
+
+                    case CtrlMode::SPEED: {
+                        return can_id_ + 0x200;
+                    }
+                    case CtrlMode::MIT:
+                    default: {
+                        return can_id_;
+                    }
+                }
+            }
+
+            void generate_mode_change_packet() {
+                memcpy(shared_tx_buf_, mode_change_buf_, 8);
+            }
+
+            void generate_disable_packet() {
+                memset(shared_tx_buf_, 0xff, 7);
+                shared_tx_buf_[7] = 0xfd;
+            }
+
+            void generate_enable_packet() {
+                memset(shared_tx_buf_, 0xff, 7);
+                shared_tx_buf_[7] = 0xfc;
+            }
+
+            [[nodiscard]] bool is_online() const {
+                return HAL_GetTick() - last_receive_time.get() <= 50;
+            }
         };
     }
 
     namespace dji_motor {
         struct MotorReport {
-            std::atomic<uint16_t> ecd{};
-            std::atomic<int16_t> rpm{};
-            std::atomic<int16_t> current{};
-            std::atomic<uint8_t> temperature{};
-            std::atomic<uint32_t> last_receive_time{};
+            ThreadSafeValue<uint16_t> ecd{};
+            ThreadSafeValue<int16_t> rpm{};
+            ThreadSafeValue<int16_t> current{};
+            ThreadSafeValue<uint8_t> temperature{};
+            ThreadSafeTimestamp last_receive_time{};
         };
 
         enum class CtrlMode : uint8_t {
-            OPENLOOP_CURRENT = 0x01,
+            OPEN_LOOP_CURRENT = 0x01,
             SPEED = 0x02,
             SINGLE_ROUND_POSITION = 0x03
         };
 
         struct ControlCommand {
-            std::atomic<bool> is_enable;
-            std::atomic<int16_t> cmd;
+            ThreadSafeFlag is_enable{};
+            ThreadSafeValue<int16_t> cmd{};
         };
 
         struct Motor {
@@ -157,7 +269,7 @@ namespace aim::ecat::task {
             algorithms::PID angle_pid{};
 
             [[nodiscard]] bool is_online() const {
-                return HAL_GetTick() - report.last_receive_time.load(std::memory_order_acquire) <= 50;
+                return HAL_GetTick() - report.last_receive_time.get() <= 50;
             }
         };
 
@@ -185,14 +297,127 @@ namespace aim::ecat::task {
 
             void run_task() override;
 
-            void exit() override;
-
         private:
-            FDCAN_TxHeaderTypeDef shared_tx_header_{};
-            uint8_t shared_tx_buf_[8]{};
             Motor motors_[4]{};
         };
     }
+
+    namespace hipnuc_imu {
+        class HIPNUC_IMU_CAN final : public CanRunnable {
+        public:
+            explicit HIPNUC_IMU_CAN(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+        private:
+            ThreadSafeBuffer buf_{21};
+        };
+    }
+
+    namespace sbus_rc {
+        class SBUS_RC final : public UartRunnable {
+        public:
+            explicit SBUS_RC(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void uart_recv(uint16_t size) override;
+
+            void uart_err() override;
+
+        private:
+            ThreadSafeTimestamp last_receive_time_{};
+            ThreadSafeBuffer buf_{23};
+        };
+    }
+
+    namespace lk_motor {
+
+        enum class State {
+            DISABLED,
+            QUERYING_STATE,
+            ENABLED
+        };
+
+        struct MotorReport {
+            ThreadSafeFlag is_motor_enabled{false};
+            ThreadSafeValue<uint16_t> ecd{0};
+            ThreadSafeValue<int16_t> speed{0};
+            ThreadSafeValue<int16_t> current{0};
+            ThreadSafeValue<uint8_t> temperature{0};
+            ThreadSafeTimestamp last_receive_time{};
+        };
+
+        enum class CtrlMode : uint8_t {
+            OPEN_LOOP_CURRENT = 0x01,
+            TORQUE = 0x02,
+            SPEED_WITH_TORQUE_LIMIT = 0x03,
+            MULTI_ROUND_POSITION = 0x04,
+            MULTI_ROUND_POSITION_WITH_SPEED_LIMIT = 0x05,
+            SINGLE_ROUND_POSITION = 0x06,
+            SINGLE_ROUND_POSITION_WITH_SPEED_LIMIT = 0x07,
+        };
+
+        struct ControlCommand {
+            ThreadSafeFlag is_enable{};
+            ThreadSafeFlag last_is_enable{};
+
+            // for different control mode
+            // valid for 0x06 0x07
+            ThreadSafeValue<uint8_t> cmd_uint8{};
+            // valid for 0x05 0x07
+            ThreadSafeValue<uint16_t> cmd_uint16{};
+            // valid for 0x01 0x02 0x03
+            ThreadSafeValue<int16_t> cmd_int16{};
+            // valid for 0x06 0x07
+            ThreadSafeValue<uint32_t> cmd_uint32{};
+            // valid for 0x03 0x04 0x05
+            ThreadSafeValue<int32_t> cmd_int32{};
+        };
+
+        class LK_MOTOR final : public CanRunnable {
+        public:
+            explicit LK_MOTOR(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+
+            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+            void run_task() override;
+
+        private:
+            MotorReport report_{};
+            CtrlMode mode_{};
+            ThreadSafeValue<State> state_{State::DISABLED};
+            ControlCommand command_{};
+            uint32_t packet_id_{};
+
+            [[nodiscard]] bool is_online() const {
+                return HAL_GetTick() - report_.last_receive_time.get() <= 50;
+            }
+
+            void generate_disable_packet() {
+                memset(shared_tx_buf_, 0, 8);
+                shared_tx_buf_[0] = 0x80;
+            }
+
+            void generate_enable_packet() {
+                memset(shared_tx_buf_, 0, 8);
+                shared_tx_buf_[0] = 0x88;
+            }
+
+            void generate_state_check_packet() {
+                memset(shared_tx_buf_, 0, 8);
+                shared_tx_buf_[0] = 0x9A;
+            }
+        };
+    }
+
+
 }
 
 #endif //TASK_DEFS_H

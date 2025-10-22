@@ -77,10 +77,14 @@ namespace aim::io {
             write_uint16(static_cast<uint16_t>(value), buf, offset);
         }
 
-        void write_int32(const int32_t value, uint8_t *buf, int *offset) {
+        void write_uint32(const uint32_t value, uint8_t *buf, int *offset) {
             for (int i = 0; i < 4; i++) {
                 buf[(*offset)++] = value >> (8 * i) & 0xFF;
             }
+        }
+
+        void write_int32(const int32_t value, uint8_t *buf, int *offset) {
+            write_uint32(static_cast<uint32_t>(value), buf, offset);
         }
 
         void write_float(float value, uint8_t *buf, int *offset) {

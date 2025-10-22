@@ -4,15 +4,6 @@
 #include "peripheral_manager.hpp"
 #include "task_manager.hpp"
 
-extern "C" {
-#include "fdcan.h"
-#include "i2c.h"
-#include "usart.h"
-#include "tim.h"
-#include "adc.h"
-#include "cmsis_os.h"
-}
-
 using namespace aim::ecat::task;
 using namespace aim::hardware;
 
@@ -56,6 +47,14 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
+    if (huart->Instance == USART1) {
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_USART1))->is_busy.clear(); // NOLINT
+    } else if (huart->Instance == UART4) {
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART4))->is_busy.clear(); // NOLINT
+    } else if (huart->Instance == UART8) {
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy.clear(); // NOLINT
+    }
+
     for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_uart_task.get()) {
             continue;

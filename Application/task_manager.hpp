@@ -25,7 +25,13 @@ namespace aim::ecat::task {
 
     std::vector<std::shared_ptr<runnable_conf> > *get_run_confs();
 
-    utils::ThreadSafeCounter *get_terminated_counter();
+    ThreadSafeCounter *get_terminated_counter();
+
+    constexpr uint32_t LED_PSC = 23999;
+    // task loaded, 40hz / 25ms
+    constexpr uint32_t LED_TASK_NOT_LOADED_ARR = 249;
+    // task not loaded, 4hz / 250ms
+    constexpr uint32_t LED_TASK_LOADED_ARR = 2499;
 }
 
 #endif //ECATV2_AX58100_H750_UNIVERSAL_TASK_MANAGER_H
