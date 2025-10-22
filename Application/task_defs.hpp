@@ -162,6 +162,9 @@ namespace aim::ecat::task {
             ThreadSafeBuffer cmd{8};
         };
 
+        // ms
+        constexpr int MODE_CHANGE_BYPASS_TIMEOUT = 1000;
+
         class DM_MOTOR final : public CanRunnable {
         public:
             explicit DM_MOTOR(buffer::Buffer *buffer);
@@ -334,7 +337,6 @@ namespace aim::ecat::task {
     }
 
     namespace lk_motor {
-
         enum class State {
             DISABLED,
             QUERYING_STATE,
@@ -416,8 +418,6 @@ namespace aim::ecat::task {
             }
         };
     }
-
-
 }
 
 #endif //TASK_DEFS_H

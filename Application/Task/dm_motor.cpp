@@ -96,11 +96,9 @@ namespace aim::ecat::task::dm_motor {
         }
         last_receive_time.set_current();
 
-        if (get_current_state() == State::PENDING_MODE_CHANGE) {
-            if (memcmp(rx_data, mode_change_buf_, 8) == 0) {
-                change_state(State::MODE_CHANGED);
-                return;
-            }
+        if (memcmp(rx_data, mode_change_buf_, 8) == 0) {
+            change_state(State::MODE_CHANGED);
+            return;
         }
 
         uint8_t report_buf[8] = {};
@@ -149,20 +147,21 @@ namespace aim::ecat::task::dm_motor {
                 // if motor online but not received any mode-change confirmation
                 // it means this motor is V2 hw/sw, which don't support mode change packet
                 // in this case just skip the mode change state
-                if (HAL_GetTick() - get_state_enter_time() > 1000) {
+                if (HAL_GetTick() - get_state_enter_time() > MODE_CHANGE_BYPASS_TIMEOUT) {
                     change_state(State::MODE_CHANGE_BYPASSED);
                     return;
                 }
 
-                // keeping sending dummy packet to get reply frame from the motor
-                generate_disable_packet();
+                // keeping sending request packets
+                generate_mode_change_packet();
                 shared_tx_header_.DataLength = 8;
                 send_packet();
                 break;
             }
             case State::MODE_CHANGED:
             case State::MODE_CHANGE_BYPASSED: {
-                // now enter normal control state
+                // below this line the motor is confirmed online and ready to control
+
                 if (cmd_.is_enable.get()) {
                     // motor not enabled
                     if (!state_.is_motor_enabled.get()) {

@@ -7,6 +7,7 @@
 
 #ifdef __cplusplus
 extern "C" {
+
 #endif
 
 void soes_application(const void *);

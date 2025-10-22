@@ -125,6 +125,7 @@ namespace aim::ecat::task::lk_motor {
         report_.last_receive_time.set_current();
 
         int index = 1;
+        // if this is the state querying response packet
         if (const uint8_t packet_type = rx_data[0]; packet_type == 0x9A) {
             if (const uint8_t motor_state = rx_data[6]; motor_state == 0x00) {
                 state_.set(State::ENABLED);
@@ -234,6 +235,4 @@ namespace aim::ecat::task::lk_motor {
         }
         send_packet();
     }
-
-
 }

@@ -134,6 +134,10 @@ namespace aim::ecat::task::dji_motor {
                 big_endian::write_uint16(0, shared_tx_buf_, &index);
                 continue;
             }
+            if (!motor.is_online()) {
+                big_endian::write_uint16(0, shared_tx_buf_, &index);
+                continue;
+            }
 
             if (motor.command.is_enable.get()) {
                 switch (motor.mode) {
@@ -154,12 +158,12 @@ namespace aim::ecat::task::dji_motor {
                         big_endian::write_int16(
                             static_cast<int16_t>(motor.speed_pid.calculate(
                                 motor.report.rpm.get(),
-                                static_cast<float>(-static_cast<int16_t>(motor.speed_pid.calculate(
+                                -motor.speed_pid.calculate(
                                     0,
                                     calculate_err(
                                         motor.report.ecd.get(),
                                         motor.command.cmd.get())
-                                )))
+                                )
                             )),
                             shared_tx_buf_, &index);
                         break;
