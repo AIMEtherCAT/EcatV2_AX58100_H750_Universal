@@ -7,10 +7,10 @@
 
 namespace aim::ecat::task::hipnuc_imu {
     HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer */* buffer */) {
-        peripheral_ = peripheral::get_peripheral(peripheral::Type::PERIPHERAL_CAN);
-        get_peripheral()->init();
+        init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         can_id_type_ = FDCAN_STANDARD_ID;
+        can_inst_ = &hfdcan2;
     }
 
     void HIPNUC_IMU_CAN::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {

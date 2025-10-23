@@ -7,8 +7,7 @@
 
 namespace aim::ecat::task::adc {
     ADC::ADC(buffer::Buffer *buffer) {
-        peripheral_ = peripheral::get_peripheral(peripheral::Type::PERIPHERAL_ADC1);
-        get_peripheral()->init();
+        init_peripheral(peripheral::Type::PERIPHERAL_ADC1);
 
         coefficient_[0] = buffer->read_float();
         coefficient_[1] = buffer->read_float();

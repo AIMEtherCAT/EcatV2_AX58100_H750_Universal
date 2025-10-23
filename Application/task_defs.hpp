@@ -11,6 +11,7 @@
 
 #include "pid.hpp"
 #include "thread_safe_utils.hpp"
+#include "crc16.hpp"
 
 extern "C" {
 #include "main.h"
@@ -60,6 +61,11 @@ namespace aim::ecat::task {
 
         virtual void exit() {
             get_peripheral()->deinit();
+        }
+
+        void init_peripheral(const peripheral::Type type) {
+            peripheral_ = peripheral::get_peripheral(type);
+            get_peripheral()->init();
         }
 
         template<typename T = peripheral::Peripheral>
@@ -288,8 +294,8 @@ namespace aim::ecat::task {
             ControlCommand command{};
             uint32_t report_packet_id{};
 
-            algorithms::PID speed_pid{};
-            algorithms::PID angle_pid{};
+            algorithm::PID speed_pid{};
+            algorithm::PID angle_pid{};
 
             [[nodiscard]] bool is_online() const {
                 return HAL_GetTick() - report.last_receive_time.get() <= 50;
@@ -339,6 +345,59 @@ namespace aim::ecat::task {
         };
     }
 
+    namespace pmu_uavcan {
+
+        constexpr int BUF_SIZE = 64;
+        // ms
+        constexpr int TID_TIMEOUT = 1000;
+        constexpr uint32_t PACKET_ID = 0x1401557F;
+        // ms
+        constexpr int STATE_BROADCAST_PERIOD = 1000;
+
+         struct RxState {
+            uint8_t buffer[BUF_SIZE];
+            uint16_t len;
+            uint16_t crc;
+            uint8_t initialized;
+            uint8_t toggle;
+            uint8_t transfer_id;
+            uint32_t last_ts;
+        };
+
+        struct TailByte {
+            uint8_t start;
+            uint8_t end;
+            uint8_t toggle;
+            uint8_t tid;
+        } ;
+
+        class PMU_UAVCAN final : public CanRunnable {
+        public:
+            explicit PMU_UAVCAN(buffer::Buffer */* buffer */);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+
+            void run_task() override;
+
+        private:
+            ThreadSafeCounter uptime_{};
+            ThreadSafeValue<uint8_t> transfer_id_{};
+            ThreadSafeTimestamp last_receive_time_{};
+            ThreadSafeBuffer recv_buf_{6};
+            TailByte tail_{};
+            RxState rx_state_{};
+
+            void parse_tail_byte(const uint8_t tail) {
+                tail_.start = tail >> 7 & 1;
+                tail_.end = tail >> 6 & 1;
+                tail_.toggle = tail >> 5 & 1;
+                tail_.tid = tail & 0x1F;
+            }
+        };
+    }
+
     namespace sbus_rc {
         class SBUS_RC final : public UartRunnable {
         public:
@@ -354,6 +413,69 @@ namespace aim::ecat::task {
             ThreadSafeTimestamp last_receive_time_{};
             ThreadSafeBuffer buf_{23};
         };
+    }
+
+    namespace pwm {
+
+        constexpr uint32_t TIM2_FREQ = 240000000;
+        constexpr uint32_t TIM3_FREQ = 240000000;
+
+        struct ControlCommand {
+            ThreadSafeValue<uint16_t> channel1{};
+            ThreadSafeValue<uint16_t> channel2{};
+            ThreadSafeValue<uint16_t> channel3{};
+            ThreadSafeValue<uint16_t> channel4{};
+        };
+
+        struct TIMSettingPair {
+            uint16_t psc;
+            uint16_t arr;
+        };
+
+        class PWM_ONBOARD final : public CustomRunnable {
+        public:
+            explicit PWM_ONBOARD(buffer::Buffer *buffer);
+
+            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+
+        private:
+            TIM_HandleTypeDef *tim_inst_{nullptr};
+            ControlCommand command_{};
+            TIMSettingPair setting_pair_{};
+            ThreadSafeFlag is_pwm_started{false};
+            uint16_t expected_period_{};
+
+            [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const {
+                return static_cast<uint32_t>(lround(
+                    static_cast<double>(expected_high_pulse) /
+                    static_cast<double>(expected_period_) *
+                    this->setting_pair_.arr
+                ));
+            }
+        };
+
+        struct ExternalServoBoardControlPacket {
+            uint8_t header{0x01};
+            uint16_t expected_period{};
+            uint16_t servo_cmd[16]{};
+            uint16_t checksum{};
+        } __attribute__((packed));
+
+        class PWM_EXTERNAL final : public UartRunnable {
+        public:
+            explicit PWM_EXTERNAL(buffer::Buffer *buffer);
+
+            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+
+            void uart_err() override;
+        private:
+            ThreadSafeBuffer cmd_buf_{37};
+            uint8_t enabled_channel_count_{};
+            uint16_t expected_period_{};
+            ThreadSafeTimestamp last_send_time_{};
+            ThreadSafeTimestamp last_reset_time{};
+            ExternalServoBoardControlPacket control_packet;
+    };
     }
 
     namespace lk_motor {

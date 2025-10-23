@@ -1,7 +1,7 @@
 #include "pid.hpp"
 #include <cmath>
 
-namespace aim::algorithms {
+namespace aim::algorithm {
     float PID::calculate(const float ref, const float set) {
         if (std::isnan(sum_error_)) {
             sum_error_ = 0.0f;

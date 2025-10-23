@@ -40,7 +40,6 @@ namespace aim::ecat::task {
         runConfMutexHandle = osMutexCreate(osMutex(runConfMutex));
     }
 
-    // ReSharper disable once CppParameterMayBeConstPtrOrRef
     void task_thread_func_impl(void const *argument) {
         std::shared_ptr<runnable_conf> conf_inst;
         osMutexWait(runConfMutexHandle, osWaitForever);
@@ -52,7 +51,6 @@ namespace aim::ecat::task {
         }
         osMutexRelease(runConfMutexHandle);
 
-        // ReSharper disable once CppDFAEndlessLoop
         while (true) {
             if (!conf_inst->runnable->running.get()) {
                 break;

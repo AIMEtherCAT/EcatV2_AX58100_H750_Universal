@@ -1,7 +1,7 @@
 #ifndef PID_H
 #define PID_H
 
-namespace aim::algorithms {
+namespace aim::algorithm {
     class PID {
     public:
         explicit PID(const float kp = 0.0f, const float ki = 0.0f, const float kd = 0.0f,

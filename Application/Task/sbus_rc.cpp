@@ -4,9 +4,8 @@
 
 namespace aim::ecat::task::sbus_rc {
     SBUS_RC::SBUS_RC(buffer::Buffer * /* buffer */) {
-        peripheral_ = peripheral::get_peripheral(peripheral::Type::PERIPHERAL_UART8);
+        init_peripheral(peripheral::Type::PERIPHERAL_UART8);
 
-        get_peripheral()->init();
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(25);
     }
 

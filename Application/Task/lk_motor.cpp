@@ -7,8 +7,7 @@
 
 namespace aim::ecat::task::lk_motor {
     LK_MOTOR::LK_MOTOR(buffer::Buffer *buffer) {
-        peripheral_ = peripheral::get_peripheral(peripheral::Type::PERIPHERAL_CAN);
-        get_peripheral()->init();
+        init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         period = buffer->read_uint16();
 
