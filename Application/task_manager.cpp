@@ -132,6 +132,9 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::ADC): {
+                    conf->runnable = std::make_unique<adc::ADC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::CAN_PMU): {

@@ -140,6 +140,7 @@ namespace aim::hardware::peripheral {
     }
 
     void ADC1Peripheral::_deinit_impl() {
+        HAL_ADC_Stop_DMA(&hadc1);
         HAL_ADC_DeInit(&hadc1);
     }
 

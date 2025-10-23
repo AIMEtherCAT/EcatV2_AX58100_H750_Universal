@@ -274,7 +274,7 @@ void App_MS5837_30BA::i2c_recv(uint8_t *rx_data) {
                       (int64_t) C4_Temperature_coefficient_of_pressure_offset * (int64_t) dT) / (int64_t) 128;
             SENS = (int64_t) C1_Pressure_sensitivity * 32768 + (
                        (int64_t) C3_Temperature_coefficient_of_pressure_sensitivity * (int64_t) dT) / (int64_t) 256;
-            P = (int64_t)((int64_t) D1_Digital_pressure_value * (int64_t) SENS / (int64_t) 2097152 - (int64_t) OFF) / (
+            P = (int64_t) ((int64_t) D1_Digital_pressure_value * (int64_t) SENS / (int64_t) 2097152 - (int64_t) OFF) / (
                     int64_t) 8192;
 
             if (TEMP / 100 < 20) {

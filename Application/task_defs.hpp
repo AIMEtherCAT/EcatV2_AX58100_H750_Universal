@@ -240,6 +240,26 @@ namespace aim::ecat::task {
         };
     }
 
+    namespace adc {
+        inline float lowpass_filter(const float prev, const float current, const float alpha) {
+            return alpha * current + (1.0f - alpha) * prev;
+        }
+
+        constexpr float ADC_LF_ALPHA = 0.075;
+
+        class ADC final : public CustomRunnable {
+        public:
+            explicit ADC(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+        private:
+            ThreadSafeValue<float> parsed_adc_value_channel1{};
+            ThreadSafeValue<float> parsed_adc_value_channel2{};
+            float coefficient_[2]{};
+        };
+    }
+
     namespace dji_motor {
         struct MotorReport {
             ThreadSafeValue<uint16_t> ecd{};
