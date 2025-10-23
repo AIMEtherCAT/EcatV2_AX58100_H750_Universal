@@ -467,12 +467,17 @@ namespace aim::ecat::task {
 
             void read_from_master(buffer::Buffer *master_to_slave_buf) override;
 
+            void uart_dma_tx_finished_callback() override;
+
             void uart_err() override;
+
+            void run_task() override;
+
         private:
-            ThreadSafeBuffer cmd_buf_{37};
             uint8_t enabled_channel_count_{};
             uint16_t expected_period_{};
             ThreadSafeTimestamp last_send_time_{};
+            ThreadSafeTimestamp last_send_finished_time_{};
             ThreadSafeTimestamp last_reset_time{};
             ExternalServoBoardControlPacket control_packet;
     };

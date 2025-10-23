@@ -15,6 +15,7 @@ extern "C" {
 #include "i2c.h"
 #include "tim.h"
 #include "adc.h"
+#include "stm32h7xx_hal_dma.h"
 }
 
 namespace aim::hardware::peripheral {
@@ -91,11 +92,33 @@ namespace aim::hardware::peripheral {
             HAL_UARTEx_ReceiveToIdle_DMA(_huart, _recv_buf->get_buf_pointer<uint8_t>(), size);
         }
 
-        void send_by_dma(const uint8_t *buffer, const uint16_t size) {
+        void reset_tx_dma() const {
+            HAL_DMA_Abort(_huart->hdmatx);
+
+            __HAL_DMA_DISABLE(_huart->hdmatx);
+            __HAL_DMA_CLEAR_FLAG(_huart->hdmatx,
+                 __HAL_DMA_GET_TC_FLAG_INDEX(_huart->hdmatx) |
+                 __HAL_DMA_GET_HT_FLAG_INDEX(_huart->hdmatx) |
+                 __HAL_DMA_GET_TE_FLAG_INDEX(_huart->hdmatx)
+                );
+            __HAL_DMA_ENABLE(_huart->hdmatx);
+            huart4.gState = HAL_UART_STATE_READY;
+            huart4.RxState = HAL_UART_STATE_READY;
+            huart4.TxXferCount = 0;
+            huart4.TxXferSize = 0;
+            __HAL_UART_CLEAR_FLAG(&huart4, UART_FLAG_TC | UART_FLAG_TXE | UART_FLAG_FE | UART_FLAG_NE | UART_FLAG_ORE);
+
+        }
+
+        bool send_by_dma(const uint8_t *buffer, const uint16_t size) {
+            if (is_busy.get()) {
+                return false;
+            }
             _send_buf->raw_write(buffer, size);
             HAL_UART_Transmit_DMA(&huart1, _send_buf->get_buf_pointer<uint8_t>(), size);
             _send_buf->reset_index();
             is_busy.set();
+            return true;
         }
 
         utils::thread_safety::ThreadSafeFlag is_busy;
