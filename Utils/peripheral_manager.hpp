@@ -102,12 +102,18 @@ namespace aim::hardware::peripheral {
                  __HAL_DMA_GET_TE_FLAG_INDEX(_huart->hdmatx)
                 );
             __HAL_DMA_ENABLE(_huart->hdmatx);
-            huart4.gState = HAL_UART_STATE_READY;
-            huart4.RxState = HAL_UART_STATE_READY;
-            huart4.TxXferCount = 0;
-            huart4.TxXferSize = 0;
-            __HAL_UART_CLEAR_FLAG(&huart4, UART_FLAG_TC | UART_FLAG_TXE | UART_FLAG_FE | UART_FLAG_NE | UART_FLAG_ORE);
+            _huart->gState = HAL_UART_STATE_READY;
+            _huart->RxState = HAL_UART_STATE_READY;
+            _huart->TxXferCount = 0;
+            _huart->TxXferSize = 0;
 
+            __HAL_UART_CLEAR_FLAG(_huart,
+                UART_FLAG_TC |
+                UART_FLAG_TXE |
+                UART_FLAG_FE |
+                UART_FLAG_NE |
+                UART_FLAG_ORE
+            );
         }
 
         bool send_by_dma(const uint8_t *buffer, const uint16_t size) {

@@ -166,7 +166,8 @@ namespace aim::ecat::task {
             }
 
             run_confs.push_back(conf);
-            if (conf->thread_def.stacksize != 0) {
+            if (conf->runnable->is_run_task_enabled_) {
+                configASSERT(conf->thread_def.stacksize != 0);
                 osThreadCreate(&conf->thread_def, conf.get());
             }
         }

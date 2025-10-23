@@ -6,7 +6,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::adc {
-    ADC::ADC(buffer::Buffer *buffer) {
+    ADC::ADC(buffer::Buffer *buffer) : CustomRunnable(false) {
         init_peripheral(peripheral::Type::PERIPHERAL_ADC1);
 
         coefficient_[0] = buffer->read_float();

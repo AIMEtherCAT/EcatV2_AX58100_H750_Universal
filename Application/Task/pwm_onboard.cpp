@@ -9,7 +9,7 @@
 
 namespace aim::ecat::task::pwm {
 
-    PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) {
+    PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false) {
         uint32_t tim_freq = 0;
 
         switch (buffer->read_uint8()) {

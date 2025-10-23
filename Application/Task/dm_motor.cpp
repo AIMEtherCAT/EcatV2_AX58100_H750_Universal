@@ -6,7 +6,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::dm_motor {
-    DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) {
+    DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         period = buffer->read_uint16();

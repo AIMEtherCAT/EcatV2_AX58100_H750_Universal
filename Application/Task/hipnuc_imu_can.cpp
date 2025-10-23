@@ -6,7 +6,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::hipnuc_imu {
-    HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer */* buffer */) {
+    HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer */* buffer */) : CanRunnable(false) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         can_id_type_ = FDCAN_STANDARD_ID;

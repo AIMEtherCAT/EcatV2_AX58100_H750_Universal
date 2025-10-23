@@ -9,7 +9,7 @@
 
 namespace aim::ecat::task::pwm {
 
-    PWM_EXTERNAL::PWM_EXTERNAL(buffer::Buffer *buffer) {
+    PWM_EXTERNAL::PWM_EXTERNAL(buffer::Buffer *buffer) : UartRunnable(true) {
         period = 1;
         switch (buffer->read_uint8()) {
             case 1: {
@@ -31,10 +31,8 @@ namespace aim::ecat::task::pwm {
         for (int i = 0 ; i < enabled_channel_count_ ; i ++) {
             control_packet.servo_cmd[i] = init_value;
         }
-        uint8_t cmd_buf[37] = {};
-        memcpy(cmd_buf, &control_packet, 37);
-        algorithm::crc16::append_CRC16_check_sum(cmd_buf, 37);
-        get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37);
+        send_packet();
+        // set last send time to now because it is the first send
         last_send_time_.set_current();
     }
 
@@ -42,17 +40,12 @@ namespace aim::ecat::task::pwm {
         for (int i = 0; i < enabled_channel_count_; i++) {
             control_packet.servo_cmd[i] = master_to_slave_buf->read_uint16();
         }
-        uint8_t cmd_buf[37] = {};
-        memcpy(cmd_buf, &control_packet, 37);
-        algorithm::crc16::append_CRC16_check_sum(cmd_buf, 37);
-        // if not busy, then return true, means data sent
-        if (get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37)) {
-            last_send_time_.set_current();
-        }
+        send_packet();
     }
 
     void PWM_EXTERNAL::uart_err() {
-        get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37);
+        get_peripheral<peripheral::UartPeripheral>()->reset_tx_dma();
+        send_packet();
     }
 
     void PWM_EXTERNAL::uart_dma_tx_finished_callback() {
@@ -62,13 +55,9 @@ namespace aim::ecat::task::pwm {
     void PWM_EXTERNAL::run_task() {
         if (last_send_finished_time_.get() < last_send_time_.get()) {
             if (HAL_GetTick() - last_send_time_.get() > 50) {
-                // some packet loss happened, resend
+                // some packet loss happened, reset and then resend
+                uart_err();
             }
         }
     }
-
-
-
-
-
 }

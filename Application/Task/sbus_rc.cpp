@@ -3,7 +3,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::sbus_rc {
-    SBUS_RC::SBUS_RC(buffer::Buffer * /* buffer */) {
+    SBUS_RC::SBUS_RC(buffer::Buffer * /* buffer */) : UartRunnable(false) {
         init_peripheral(peripheral::Type::PERIPHERAL_UART8);
 
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(25);

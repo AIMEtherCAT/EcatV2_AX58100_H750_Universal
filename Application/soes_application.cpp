@@ -4,7 +4,6 @@
 #include "buffer_manager.hpp"
 #include "main.h"
 #include "peripheral_manager.hpp"
-#include "settings.h"
 #include "soes_application.hpp"
 #include "utypes.h"
 #include "task_manager.hpp"
@@ -96,7 +95,7 @@ namespace aim::ecat::application {
         uint32_t thread_count = 0;
         for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
             conf->runnable->running.clear();
-            if (conf->thread_def.stacksize != 0) {
+            if (conf->runnable->is_run_task_enabled_) {
                 thread_count++;
             }
         }

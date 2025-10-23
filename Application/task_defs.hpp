@@ -39,6 +39,9 @@ namespace aim::ecat::task {
 
     class CustomRunnable {
     public:
+
+        explicit CustomRunnable(const bool is_run_task_enabled) : is_run_task_enabled_(is_run_task_enabled) {}
+
         virtual ~CustomRunnable() = default;
 
         // unit: ms
@@ -47,6 +50,8 @@ namespace aim::ecat::task {
         TaskType task_type{};
 
         ThreadSafeFlag running{true};
+
+        bool is_run_task_enabled_{false};
 
         virtual void run_task() {
         }
@@ -74,11 +79,14 @@ namespace aim::ecat::task {
         }
 
     protected:
+
         peripheral::Peripheral *peripheral_{};
     };
 
     class CanRunnable : public CustomRunnable {
     public:
+        explicit CanRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {}
+
         ~CanRunnable() override = default;
 
         FDCAN_HandleTypeDef *can_inst_{};
@@ -98,6 +106,8 @@ namespace aim::ecat::task {
 
     class UartRunnable : public CustomRunnable {
     public:
+        explicit UartRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {}
+
         ~UartRunnable() override = default;
 
         virtual void uart_recv(uint16_t size);
@@ -112,6 +122,8 @@ namespace aim::ecat::task {
     // ReSharper disable once CppClassCanBeFinal
     class I2CRunnable : public CustomRunnable {
     public:
+        explicit I2CRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {}
+
         ~I2CRunnable() override = default;
 
         virtual void i2c_recv(uint16_t size);
@@ -480,7 +492,39 @@ namespace aim::ecat::task {
             ThreadSafeTimestamp last_send_finished_time_{};
             ThreadSafeTimestamp last_reset_time{};
             ExternalServoBoardControlPacket control_packet;
-    };
+
+            void send_packet() {
+                uint8_t cmd_buf[37] = {};
+                memcpy(cmd_buf, &control_packet, 37);
+                algorithm::crc16::append_CRC16_check_sum(cmd_buf, 37);
+                // if not busy, then return true, means data sent
+                if (get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37)) {
+                    last_send_time_.set_current();
+                }
+            }
+        };
+
+        class DSHOT600 final : public CustomRunnable {
+        public:
+            explicit DSHOT600(buffer::Buffer *buffer);
+
+            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+
+        private:
+            TIM_HandleTypeDef *tim_inst_{nullptr};
+            ControlCommand command_{};
+            TIMSettingPair setting_pair_{};
+            ThreadSafeFlag is_pwm_started{false};
+            uint16_t expected_period_{};
+
+            [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const {
+                return static_cast<uint32_t>(lround(
+                    static_cast<double>(expected_high_pulse) /
+                    static_cast<double>(expected_period_) *
+                    this->setting_pair_.arr
+                ));
+            }
+        };
     }
 
     namespace lk_motor {

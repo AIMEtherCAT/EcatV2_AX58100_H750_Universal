@@ -6,7 +6,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::dji_motor {
-    DJI_MOTOR::DJI_MOTOR(buffer::Buffer *buffer) {
+    DJI_MOTOR::DJI_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         period = buffer->read_uint16();
