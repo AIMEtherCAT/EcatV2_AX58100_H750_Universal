@@ -83,36 +83,36 @@ namespace aim::hardware::peripheral {
     class UartPeripheral : public Peripheral {
     public:
         explicit UartPeripheral(const osMutexId mutex, UART_HandleTypeDef *huart, buffer::Buffer *send_buf,
-                                buffer::Buffer *recv_buf) : Peripheral(mutex), _huart(huart),
-                                                            _send_buf(send_buf),
-                                                            _recv_buf(recv_buf) {
+                                buffer::Buffer *recv_buf) : Peripheral(mutex), huart(huart),
+                                                            send_buf(send_buf),
+                                                            recv_buf(recv_buf) {
         }
 
         void receive_by_dma(const uint16_t size) const {
-            HAL_UARTEx_ReceiveToIdle_DMA(_huart, _recv_buf->get_buf_pointer<uint8_t>(), size);
+            HAL_UARTEx_ReceiveToIdle_DMA(huart, recv_buf->get_buf_pointer<uint8_t>(), size);
         }
 
         void reset_tx_dma() const {
-            HAL_DMA_Abort(_huart->hdmatx);
+            HAL_DMA_Abort(huart->hdmatx);
 
-            __HAL_DMA_DISABLE(_huart->hdmatx);
-            __HAL_DMA_CLEAR_FLAG(_huart->hdmatx,
-                 __HAL_DMA_GET_TC_FLAG_INDEX(_huart->hdmatx) |
-                 __HAL_DMA_GET_HT_FLAG_INDEX(_huart->hdmatx) |
-                 __HAL_DMA_GET_TE_FLAG_INDEX(_huart->hdmatx)
-                );
-            __HAL_DMA_ENABLE(_huart->hdmatx);
-            _huart->gState = HAL_UART_STATE_READY;
-            _huart->RxState = HAL_UART_STATE_READY;
-            _huart->TxXferCount = 0;
-            _huart->TxXferSize = 0;
+            __HAL_DMA_DISABLE(huart->hdmatx);
+            __HAL_DMA_CLEAR_FLAG(huart->hdmatx,
+                                 __HAL_DMA_GET_TC_FLAG_INDEX(huart->hdmatx) |
+                                 __HAL_DMA_GET_HT_FLAG_INDEX(huart->hdmatx) |
+                                 __HAL_DMA_GET_TE_FLAG_INDEX(huart->hdmatx)
+            );
+            __HAL_DMA_ENABLE(huart->hdmatx);
+            huart->gState = HAL_UART_STATE_READY;
+            huart->RxState = HAL_UART_STATE_READY;
+            huart->TxXferCount = 0;
+            huart->TxXferSize = 0;
 
-            __HAL_UART_CLEAR_FLAG(_huart,
-                UART_FLAG_TC |
-                UART_FLAG_TXE |
-                UART_FLAG_FE |
-                UART_FLAG_NE |
-                UART_FLAG_ORE
+            __HAL_UART_CLEAR_FLAG(huart,
+                                  UART_FLAG_TC |
+                                  UART_FLAG_TXE |
+                                  UART_FLAG_FE |
+                                  UART_FLAG_NE |
+                                  UART_FLAG_ORE
             );
         }
 
@@ -120,17 +120,77 @@ namespace aim::hardware::peripheral {
             if (is_busy.get()) {
                 return false;
             }
-            _send_buf->raw_write(buffer, size);
-            HAL_UART_Transmit_DMA(&huart1, _send_buf->get_buf_pointer<uint8_t>(), size);
-            _send_buf->reset_index();
+            send_buf->raw_write(buffer, size);
+            if (HAL_UART_Transmit_DMA(&huart1, send_buf->get_buf_pointer<uint8_t>(), size) != HAL_OK) {
+                return false;
+            }
+            send_buf->reset_index();
             is_busy.set();
             return true;
         }
 
         utils::thread_safety::ThreadSafeFlag is_busy;
-        UART_HandleTypeDef *_huart;
-        buffer::Buffer *_send_buf;
-        buffer::Buffer *_recv_buf;
+        UART_HandleTypeDef *huart;
+        buffer::Buffer *send_buf;
+        buffer::Buffer *recv_buf;
+    };
+
+    class I2CPeripheral : public Peripheral {
+    public:
+        explicit I2CPeripheral(const osMutexId mutex, I2C_HandleTypeDef *hi2c,
+                               buffer::Buffer *send_buf, buffer::Buffer *recv_buf)
+            : Peripheral(mutex),
+              hi2c(hi2c),
+              send_buf(send_buf),
+              recv_buf(recv_buf) {
+        }
+
+        void receive_by_dma(const uint16_t dev_addr, const uint16_t size) const {
+            HAL_I2C_Master_Receive_DMA(hi2c, dev_addr, recv_buf->get_buf_pointer<uint8_t>(), size);
+        }
+
+        bool send_by_dma(const uint16_t dev_addr, const uint8_t *buffer, const uint16_t size) {
+            if (is_busy.get()) {
+                return false;
+            }
+            send_buf->raw_write(buffer, size);
+            if (HAL_I2C_Master_Transmit_DMA(hi2c, dev_addr, send_buf->get_buf_pointer<uint8_t>(), size) != HAL_OK) {
+                return false;
+            }
+            send_buf->reset_index();
+            is_busy.set();
+            return true;
+        }
+
+        void reset_tx_dma() const {
+            HAL_DMA_Abort(hi2c->hdmatx);
+
+            __HAL_DMA_DISABLE(hi2c->hdmatx);
+
+            __HAL_DMA_CLEAR_FLAG(hi2c->hdmatx,
+                                 __HAL_DMA_GET_TC_FLAG_INDEX(hi2c->hdmatx) |
+                                 __HAL_DMA_GET_HT_FLAG_INDEX(hi2c->hdmatx) |
+                                 __HAL_DMA_GET_TE_FLAG_INDEX(hi2c->hdmatx)
+            );
+
+            __HAL_DMA_ENABLE(hi2c->hdmatx);
+
+            hi2c->State = HAL_I2C_STATE_READY;
+            hi2c->PreviousState = HAL_I2C_STATE_READY;
+            hi2c->ErrorCode = HAL_I2C_ERROR_NONE;
+            hi2c->XferSize = 0;
+            hi2c->XferCount = 0;
+
+            __HAL_I2C_CLEAR_FLAG(hi2c,
+                                 I2C_FLAG_TXE |
+                                 I2C_FLAG_BERR
+            );
+        }
+
+        utils::thread_safety::ThreadSafeFlag is_busy;
+        I2C_HandleTypeDef *hi2c;
+        buffer::Buffer *send_buf;
+        buffer::Buffer *recv_buf;
     };
 
 
@@ -206,9 +266,11 @@ namespace aim::hardware::peripheral {
         void _deinit_impl() override;
     };
 
-    class I2C3Peripheral final : public Peripheral {
+    class I2C3Peripheral final : public I2CPeripheral {
     public:
-        explicit I2C3Peripheral(const osMutexId mutex) : Peripheral(mutex) {
+        explicit I2C3Peripheral(const osMutexId mutex, I2C_HandleTypeDef *hi2c,
+                                buffer::Buffer *send_buf, buffer::Buffer *recv_buf) : I2CPeripheral(
+            mutex, hi2c, send_buf, recv_buf) {
         }
 
     protected:

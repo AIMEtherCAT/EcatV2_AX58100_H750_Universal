@@ -180,7 +180,12 @@ namespace aim::hardware::peripheral {
                                                                                   buffer::Type::UART8_SEND),
                                                                               buffer::get_buffer(
                                                                                   buffer::Type::UART8_RECV));
-        instances[Type::PERIPHERAL_I2C3] = std::make_unique<I2C3Peripheral>(I2C3InitMutexHandle);
+        instances[Type::PERIPHERAL_I2C3] = std::make_unique<I2C3Peripheral>(I2C3InitMutexHandle,
+                                                                            &hi2c3,
+                                                                            buffer::get_buffer(
+                                                                                buffer::Type::I2C3_SEND),
+                                                                            buffer::get_buffer(
+                                                                                buffer::Type::I2C3_RECV));
         instances[Type::PERIPHERAL_TIM2] = std::make_unique<TIM2Peripheral>(TIM2InitMutexHandle);
         instances[Type::PERIPHERAL_TIM3] = std::make_unique<TIM3Peripheral>(TIM3InitMutexHandle);
         instances[Type::PERIPHERAL_CAN] = std::make_unique<CANPeripheral>(CANInitMutexHandle);

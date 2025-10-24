@@ -9,9 +9,9 @@ namespace aim::ecat::task::lk_motor {
     LK_MOTOR::LK_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
-        period = buffer->read_uint16();
+        period = buffer->read_uint16(buffer::EndianType::LITTLE);
 
-        packet_id_ = buffer->read_uint32();
+        packet_id_ = buffer->read_uint32(buffer::EndianType::LITTLE);
         can_id_type_ = FDCAN_STANDARD_ID;
         shared_tx_header_.Identifier = packet_id_;
         shared_tx_header_.IdType = FDCAN_STANDARD_ID;
@@ -23,7 +23,7 @@ namespace aim::ecat::task::lk_motor {
         shared_tx_header_.MessageMarker = 0;
         shared_tx_header_.DataLength = 8;
 
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
                 can_inst_ = &hfdcan1;
                 break;
@@ -36,7 +36,7 @@ namespace aim::ecat::task::lk_motor {
             }
         }
 
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
                 mode_ = CtrlMode::OPEN_LOOP_CURRENT;
                 break;
@@ -71,45 +71,45 @@ namespace aim::ecat::task::lk_motor {
     }
 
     void LK_MOTOR::write_to_master(buffer::Buffer *slave_to_master_buf) {
-        slave_to_master_buf->write_uint8(is_online());
-        slave_to_master_buf->write_int16(report_.current.get());
-        slave_to_master_buf->write_int16(report_.speed.get());
-        slave_to_master_buf->write_uint16(report_.ecd.get());
-        slave_to_master_buf->write_uint8(report_.temperature.get());
+        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, is_online());
+        slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, report_.current.get());
+        slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, report_.speed.get());
+        slave_to_master_buf->write_uint16(buffer::EndianType::LITTLE, report_.ecd.get());
+        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, report_.temperature.get());
     }
 
     void LK_MOTOR::read_from_master(buffer::Buffer *master_to_slave_buf) {
-        command_.is_enable.set(master_to_slave_buf->read_uint8());
+        command_.is_enable.set(master_to_slave_buf->read_uint8(buffer::EndianType::LITTLE));
 
         switch (mode_) {
             case CtrlMode::OPEN_LOOP_CURRENT:
             case CtrlMode::TORQUE: {
-                command_.cmd_int16.set(master_to_slave_buf->read_int16());
+                command_.cmd_int16.set(master_to_slave_buf->read_int16(buffer::EndianType::LITTLE));
                 break;
             }
             case CtrlMode::SPEED_WITH_TORQUE_LIMIT: {
-                command_.cmd_int16.set(master_to_slave_buf->read_int16());
-                command_.cmd_int32.set(master_to_slave_buf->read_int32());
+                command_.cmd_int16.set(master_to_slave_buf->read_int16(buffer::EndianType::LITTLE));
+                command_.cmd_int32.set(master_to_slave_buf->read_int32(buffer::EndianType::LITTLE));
                 break;
             }
             case CtrlMode::MULTI_ROUND_POSITION: {
-                command_.cmd_int32.set(master_to_slave_buf->read_int32());
+                command_.cmd_int32.set(master_to_slave_buf->read_int32(buffer::EndianType::LITTLE));
                 break;
             }
             case CtrlMode::MULTI_ROUND_POSITION_WITH_SPEED_LIMIT: {
-                command_.cmd_uint16.set(master_to_slave_buf->read_uint16());
-                command_.cmd_int32.set(master_to_slave_buf->read_int32());
+                command_.cmd_uint16.set(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+                command_.cmd_int32.set(master_to_slave_buf->read_int32(buffer::EndianType::LITTLE));
                 break;
             }
             case CtrlMode::SINGLE_ROUND_POSITION: {
-                command_.cmd_uint8.set(master_to_slave_buf->read_uint8());
-                command_.cmd_uint32.set(master_to_slave_buf->read_uint32());
+                command_.cmd_uint8.set(master_to_slave_buf->read_uint8(buffer::EndianType::LITTLE));
+                command_.cmd_uint32.set(master_to_slave_buf->read_uint32(buffer::EndianType::LITTLE));
                 break;
             }
             case CtrlMode::SINGLE_ROUND_POSITION_WITH_SPEED_LIMIT: {
-                command_.cmd_uint8.set(master_to_slave_buf->read_uint8());
-                command_.cmd_uint16.set(master_to_slave_buf->read_uint16());
-                command_.cmd_uint32.set(master_to_slave_buf->read_uint32());
+                command_.cmd_uint8.set(master_to_slave_buf->read_uint8(buffer::EndianType::LITTLE));
+                command_.cmd_uint16.set(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+                command_.cmd_uint32.set(master_to_slave_buf->read_uint32(buffer::EndianType::LITTLE));
                 break;
             }
             default: {

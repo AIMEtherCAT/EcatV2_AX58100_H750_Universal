@@ -66,11 +66,11 @@ namespace aim::ecat::task {
     static void load_task() {
         buffer::get_buffer(buffer::Type::ECAT_ARGS)->reset_index();
         buffer::get_buffer(buffer::Type::ECAT_ARGS)->skip(1);
-        const uint8_t task_count = buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8();
+        const uint8_t task_count = buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8(buffer::EndianType::LITTLE);
         while (run_confs.size() < task_count) {
             auto conf = std::make_shared<runnable_conf>();
 
-            switch (buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8()) {
+            switch (buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8(buffer::EndianType::LITTLE)) {
                 case static_cast<uint8_t>(TaskType::DBUS_RC): {
                     conf->is_uart_task.set();
                     conf->runnable = std::make_unique<dbus_rc::DBUS_RC>(
@@ -118,6 +118,9 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::MS5876_30BA): {
+                    conf->runnable = std::make_unique<ms5876::MS5837_30BA>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::ADC): {

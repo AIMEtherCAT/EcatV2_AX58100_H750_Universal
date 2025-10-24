@@ -11,7 +11,7 @@ namespace aim::ecat::task::pwm {
     PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false) {
         uint32_t tim_freq = 0;
 
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 2: {
                 tim_inst_ = &htim2;
                 init_peripheral(peripheral::Type::PERIPHERAL_TIM2);
@@ -28,7 +28,7 @@ namespace aim::ecat::task::pwm {
             }
         }
 
-        expected_period_ = buffer->read_uint16();
+        expected_period_ = buffer->read_uint16(buffer::EndianType::LITTLE);
         auto min_error = DBL_MAX;
         for (uint32_t psc = 0; psc <= 0xffff; ++psc) {
             const double temp_arr = static_cast<double>(expected_period_) * tim_freq / 1000000.0 / (psc + 1.0) - 1.0;
@@ -48,7 +48,7 @@ namespace aim::ecat::task::pwm {
             }
         }
 
-        const uint16_t init_value = buffer->read_uint16();
+        const uint16_t init_value = buffer->read_uint16(buffer::EndianType::LITTLE);
         command_.channel1 = calculate_compare(init_value);
         command_.channel2 = calculate_compare(init_value);
         command_.channel3 = calculate_compare(init_value);
@@ -65,10 +65,10 @@ namespace aim::ecat::task::pwm {
     }
 
     void PWM_ONBOARD::read_from_master(buffer::Buffer *master_to_slave_buf) {
-        command_.channel1 = calculate_compare(master_to_slave_buf->read_uint16());
-        command_.channel2 = calculate_compare(master_to_slave_buf->read_uint16());
-        command_.channel3 = calculate_compare(master_to_slave_buf->read_uint16());
-        command_.channel4 = calculate_compare(master_to_slave_buf->read_uint16());
+        command_.channel1 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+        command_.channel2 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+        command_.channel3 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+        command_.channel4 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
 
         send_signal();
     }

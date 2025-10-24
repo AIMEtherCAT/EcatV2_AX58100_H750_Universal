@@ -9,8 +9,8 @@ namespace aim::ecat::task::adc {
     ADC::ADC(buffer::Buffer *buffer) : CustomRunnable(false) {
         init_peripheral(peripheral::Type::PERIPHERAL_ADC1);
 
-        coefficient_[0] = buffer->read_float();
-        coefficient_[1] = buffer->read_float();
+        coefficient_[0] = buffer->read_float(buffer::EndianType::LITTLE);
+        coefficient_[1] = buffer->read_float(buffer::EndianType::LITTLE);
     }
 
     void ADC::write_to_master(buffer::Buffer *slave_to_master_buf) {
@@ -27,7 +27,7 @@ namespace aim::ecat::task::adc {
             ADC_LF_ALPHA
         ));
 
-        slave_to_master_buf->write_float(parsed_adc_value_channel1.get());
-        slave_to_master_buf->write_float(parsed_adc_value_channel2.get());
+        slave_to_master_buf->write_float(buffer::EndianType::LITTLE, parsed_adc_value_channel1.get());
+        slave_to_master_buf->write_float(buffer::EndianType::LITTLE, parsed_adc_value_channel2.get());
     }
 }

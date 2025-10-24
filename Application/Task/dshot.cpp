@@ -9,7 +9,7 @@
 
 namespace aim::ecat::task::pwm {
     DSHOT600::DSHOT600(buffer::Buffer *buffer) : CustomRunnable(false) {
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 1: {
                 tim_inst_ = &htim3;
                 init_peripheral(peripheral::Type::PERIPHERAL_TIM3);
@@ -39,7 +39,7 @@ namespace aim::ecat::task::pwm {
         HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_3);
         HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_4);
 
-        const uint16_t init_value = buffer->read_uint16();
+        const uint16_t init_value = buffer->read_uint16(buffer::EndianType::LITTLE);
         command_.channel1 = init_value;
         command_.channel2 = init_value;
         command_.channel3 = init_value;
@@ -48,10 +48,10 @@ namespace aim::ecat::task::pwm {
     }
 
     void DSHOT600::read_from_master(buffer::Buffer *master_to_slave_buf) {
-        command_.channel1 = master_to_slave_buf->read_uint16();
-        command_.channel2 = master_to_slave_buf->read_uint16();
-        command_.channel3 = master_to_slave_buf->read_uint16();
-        command_.channel4 = master_to_slave_buf->read_uint16();
+        command_.channel1 = master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE);
+        command_.channel2 = master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE);
+        command_.channel3 = master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE);
+        command_.channel4 = master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE);
         send_signal();
     }
 

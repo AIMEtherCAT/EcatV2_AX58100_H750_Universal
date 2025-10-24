@@ -9,10 +9,10 @@ namespace aim::ecat::task::dm_motor {
     DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
-        period = buffer->read_uint16();
+        period = buffer->read_uint16(buffer::EndianType::LITTLE);
 
-        can_id_ = buffer->read_uint16();
-        master_id_ = buffer->read_uint16();
+        can_id_ = buffer->read_uint16(buffer::EndianType::LITTLE);
+        master_id_ = buffer->read_uint16(buffer::EndianType::LITTLE);
         can_id_type_ = FDCAN_STANDARD_ID;
         shared_tx_header_.IdType = FDCAN_STANDARD_ID;
         shared_tx_header_.TxFrameType = FDCAN_DATA_FRAME;
@@ -22,7 +22,7 @@ namespace aim::ecat::task::dm_motor {
         shared_tx_header_.TxEventFifoControl = FDCAN_NO_TX_EVENTS;
         shared_tx_header_.MessageMarker = 0;
 
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
                 can_inst_ = &hfdcan1;
                 break;
@@ -35,7 +35,7 @@ namespace aim::ecat::task::dm_motor {
             }
         }
 
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
                 mode_ = CtrlMode::MIT;
                 break;
@@ -66,11 +66,11 @@ namespace aim::ecat::task::dm_motor {
         uint8_t report_buf[8] = {};
         report_.read(report_buf, 8);
         slave_to_master_buf->write(report_buf, 8);
-        slave_to_master_buf->write_uint8(is_online());
+        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, is_online());
     }
 
     void DM_MOTOR::read_from_master(buffer::Buffer *master_to_slave_buf) {
-        cmd_.is_enable.set(master_to_slave_buf->read_uint8());
+        cmd_.is_enable.set(master_to_slave_buf->read_uint8(buffer::EndianType::LITTLE));
         uint8_t cmd_buf[8] = {};
         switch (mode_) {
             case CtrlMode::MIT:

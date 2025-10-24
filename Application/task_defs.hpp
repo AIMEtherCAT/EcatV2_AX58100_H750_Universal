@@ -123,7 +123,6 @@ namespace aim::ecat::task {
         }
     };
 
-    // ReSharper disable once CppClassCanBeFinal
     class I2CRunnable : public CustomRunnable {
     public:
         explicit I2CRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
@@ -131,7 +130,7 @@ namespace aim::ecat::task {
 
         ~I2CRunnable() override = default;
 
-        virtual void i2c_recv(uint16_t size);
+        virtual void i2c_recv();
 
         virtual void i2c_err() {
         }
@@ -156,6 +155,156 @@ namespace aim::ecat::task {
         private:
             ThreadSafeTimestamp last_receive_time_{};
             ThreadSafeBuffer buf_{18};
+        };
+    }
+
+    namespace ms5876 {
+        constexpr uint8_t D1_OSR256_CMD = 0x40;
+        constexpr uint8_t D1_OSR512_CMD = 0x42;
+        constexpr uint8_t D1_OSR1024_CMD = 0x44;
+        constexpr uint8_t D1_OSR2048_CMD = 0x46;
+        constexpr uint8_t D1_OSR4096_CMD = 0x48;
+        constexpr uint8_t D1_OSR8192_CMD = 0x4A;
+
+        constexpr uint8_t D2_OSR256_CMD = 0x50;
+        constexpr uint8_t D2_OSR512_CMD = 0x52;
+        constexpr uint8_t D2_OSR1024_CMD = 0x54;
+        constexpr uint8_t D2_OSR2048_CMD = 0x56;
+        constexpr uint8_t D2_OSR4096_CMD = 0x58;
+        constexpr uint8_t D2_OSR8192_CMD = 0x5A;
+
+        constexpr uint8_t ADC_READ_CMD = 0x00;
+        constexpr uint8_t PROM_READ_CMD_BEGIN = 0xA0;
+        constexpr uint8_t RESET_CMD = 0x1E;
+        constexpr uint8_t ADDR = 0x76 << 1;
+
+        constexpr uint8_t RETRY_TIMES = 3;
+        constexpr uint32_t TX_TIMEOUT = 50;
+
+        enum class State : uint8_t {
+            INITIALIZING = 0,
+
+            READ_C1 = 1,
+            READ_C2 = 2,
+            READ_C3 = 3,
+            READ_C4 = 4,
+            READ_C5 = 5,
+            READ_C6 = 6,
+
+            READ_D1 = 7,
+            READ_D2 = 8,
+
+            CALCULATE = 9,
+        };
+
+        class MS5837_30BA final : public I2CRunnable {
+        public:
+            explicit MS5837_30BA(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void run_task() override;
+
+            void i2c_err() override;
+
+            void i2c_recv() override;
+
+            void i2c_dma_tx_finished_callback() override;
+
+        private:
+            ThreadSafeValue<State> state_{State::INITIALIZING};
+            SemaphoreHandle_t i2c_dma_tx_sem_{nullptr};
+            SemaphoreHandle_t i2c_dma_rx_sem_{nullptr};
+
+            uint8_t osr_id_{};
+            uint8_t d1_cmd_{};
+            uint8_t d2_cmd_{};
+            uint32_t adc_wait_time_{};
+
+            uint16_t c1_pressure_sensitivity_{};
+            uint16_t c2_pressure_offset_{};
+            uint16_t c3_temperature_coefficient_of_pressure_sensitivity_{};
+            uint16_t c4_temperature_coefficient_of_pressure_offset_{};
+            uint16_t c5_reference_temperature_{};
+            uint16_t c6_temperature_coefficient_of_the_temperature_{};
+
+            uint32_t d1_digital_pressure_value_{};
+            uint32_t d2_digital_temperature_value_{};
+
+            int32_t dt_{};
+            int32_t temp_{};
+
+            int64_t off_{};
+            int64_t sens_{};
+            int32_t p_{};
+
+            int64_t ti_{};
+            int64_t offi_{};
+            int64_t sensi_{};
+            int64_t off2_{};
+            int64_t sens2_{};
+
+            ThreadSafeValue<int32_t> temp2_{};
+            ThreadSafeValue<int32_t> p2_{};
+
+            uint16_t read_calibration_data(const int index, uint8_t *retry_times) const {
+                uint8_t cmd = 0;
+                uint16_t res = 0;
+                cmd = PROM_READ_CMD_BEGIN + index * 2;
+                get_peripheral<peripheral::I2CPeripheral>()->send_by_dma(ADDR, &cmd, 1);
+                while ((*retry_times)--) {
+                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                        // tx finished, waiting for rx
+                        get_peripheral<peripheral::I2CPeripheral>()->receive_by_dma(ADDR, 2);
+                        if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                            // rx finished, reading and switching to next state
+                            res = get_peripheral<peripheral::UartPeripheral>()->recv_buf->read_uint16(
+                                buffer::EndianType::BIG);
+                            break;
+                        }
+                    }
+                    get_peripheral<peripheral::I2CPeripheral>()->reset_tx_dma();
+                }
+                return res;
+            }
+
+            bool start_adc(const uint8_t cmd_used, uint8_t *retry_times) const {
+                const uint8_t cmd = cmd_used;
+                get_peripheral<peripheral::I2CPeripheral>()->send_by_dma(ADDR, &cmd, 1);
+                while ((*retry_times)--) {
+                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                        return true;
+                    }
+                    vTaskDelay(adc_wait_time_);
+                    get_peripheral<peripheral::I2CPeripheral>()->reset_tx_dma();
+                }
+                return false;
+            }
+
+            uint32_t read_adc_data(uint8_t *retry_times) const {
+                // ReSharper disable once CppVariableCanBeMadeConstexpr
+                const uint8_t cmd = ADC_READ_CMD;
+                uint32_t res = 0;
+                get_peripheral<peripheral::I2CPeripheral>()->send_by_dma(ADDR, &cmd, 1);
+                while ((*retry_times)--) {
+                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                        // tx finished, waiting for rx
+                        get_peripheral<peripheral::I2CPeripheral>()->receive_by_dma(ADDR, 2);
+                        if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                            // rx finished, reading and switching to next state
+                            res = get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[0]
+                                  << 16 |
+                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[1]
+                                  << 8 |
+                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[2];
+                            break;
+                        }
+                    }
+                    vTaskDelay(adc_wait_time_);
+                    get_peripheral<peripheral::I2CPeripheral>()->reset_tx_dma();
+                }
+                return res;
+            }
         };
     }
 

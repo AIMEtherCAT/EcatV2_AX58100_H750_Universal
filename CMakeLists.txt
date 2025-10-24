@@ -66,6 +66,7 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Application/Task/pwm_external.cpp"
         "Application/Task/pwm_onboard.cpp"
         "Application/Task/sbus_rc.cpp"
+        "Application/Task/ms5837_30ba.cpp"
 
         "Utils/pid.cpp"
         "Utils/crc16.cpp"

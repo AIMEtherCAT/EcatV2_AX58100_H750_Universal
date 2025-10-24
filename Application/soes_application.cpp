@@ -123,13 +123,14 @@ namespace aim::ecat::application {
         // sdo not loaded
         if (Obj.master_status == MASTER_SENDING_ARGUMENTS) {
             // read sdo idx and corresponding content
-            arg_recv_idx = buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->read_uint16();
+            arg_recv_idx = buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->read_uint16(
+                buffer::EndianType::LITTLE);
             // index starting with 1, 0 means no any meaningful content received yet
             if (arg_recv_idx == 0) {
                 return;
             }
             buffer::get_buffer(buffer::Type::ECAT_ARGS)->get_buf_pointer<uint8_t>()[arg_recv_idx] = buffer::get_buffer(
-                buffer::Type::ECAT_MASTER_TO_SLAVE)->read_uint8();
+                buffer::Type::ECAT_MASTER_TO_SLAVE)->read_uint8(buffer::EndianType::LITTLE);
             return;
         }
 
@@ -169,9 +170,12 @@ namespace aim::ecat::application {
             // sdo_len != 0
             if (Obj.master_status == MASTER_SENDING_ARGUMENTS) {
                 // write back sdo lastest received idx and corresponding content for verification
-                buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->write_uint16(arg_recv_idx);
+                buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->write_uint16(
+                    buffer::EndianType::LITTLE, arg_recv_idx);
                 buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->write_uint8(
-                    buffer::get_buffer(buffer::Type::ECAT_ARGS)->get_buf_pointer<uint8_t>()[arg_recv_idx]);
+                    buffer::EndianType::LITTLE,
+                    buffer::get_buffer(buffer::Type::ECAT_ARGS)->get_buf_pointer<uint8_t>()[arg_recv_idx]
+                );
 
                 if (arg_recv_idx == Obj.sdo_len) {
                     Obj.slave_status = SLAVE_READY;

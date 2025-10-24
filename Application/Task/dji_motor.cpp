@@ -9,10 +9,10 @@ namespace aim::ecat::task::dji_motor {
     DJI_MOTOR::DJI_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
-        period = buffer->read_uint16();
+        period = buffer->read_uint16(buffer::EndianType::LITTLE);
 
         can_id_type_ = FDCAN_STANDARD_ID;
-        shared_tx_header_.Identifier = buffer->read_uint32();
+        shared_tx_header_.Identifier = buffer->read_uint32(buffer::EndianType::LITTLE);
         shared_tx_header_.IdType = FDCAN_STANDARD_ID;
         shared_tx_header_.TxFrameType = FDCAN_DATA_FRAME;
         shared_tx_header_.DataLength = 8;
@@ -23,13 +23,13 @@ namespace aim::ecat::task::dji_motor {
         shared_tx_header_.MessageMarker = 0;
 
         for (Motor &motor: motors_) {
-            motor.report_packet_id = buffer->read_uint32();
+            motor.report_packet_id = buffer->read_uint32(buffer::EndianType::LITTLE);
             if (motor.report_packet_id != 0) {
                 motor.is_exist = true;
             }
         }
 
-        switch (buffer->read_uint8()) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
                 can_inst_ = &hfdcan1;
                 break;
@@ -46,7 +46,7 @@ namespace aim::ecat::task::dji_motor {
             if (!motor.is_exist) {
                 continue;
             }
-            switch (buffer->read_uint8()) {
+            switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
                 case 0x01: {
                     motor.mode = CtrlMode::OPEN_LOOP_CURRENT;
                     break;
@@ -54,29 +54,29 @@ namespace aim::ecat::task::dji_motor {
                 case 0x02: {
                     motor.mode = CtrlMode::SPEED;
                     motor.speed_pid.basic_init(
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float()
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE)
                     );
                     break;
                 }
                 case 0x03: {
                     motor.mode = CtrlMode::SINGLE_ROUND_POSITION;
                     motor.speed_pid.basic_init(
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float()
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE)
                     );
                     motor.angle_pid.basic_init(
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float(),
-                        buffer->read_float()
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE),
+                        buffer->read_float(buffer::EndianType::LITTLE)
                     );
                     break;
                 }
@@ -91,11 +91,11 @@ namespace aim::ecat::task::dji_motor {
             if (!motor.is_exist) {
                 continue;
             }
-            slave_to_master_buf->write_uint8(motor.is_online());
-            slave_to_master_buf->write_uint16(motor.report.ecd.get());
-            slave_to_master_buf->write_int16(motor.report.rpm.get());
-            slave_to_master_buf->write_int16(motor.report.current.get());
-            slave_to_master_buf->write_uint8(motor.report.temperature.get());
+            slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, motor.is_online());
+            slave_to_master_buf->write_uint16(buffer::EndianType::LITTLE, motor.report.ecd.get());
+            slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, motor.report.rpm.get());
+            slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, motor.report.current.get());
+            slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, motor.report.temperature.get());
         }
     }
 
@@ -104,8 +104,8 @@ namespace aim::ecat::task::dji_motor {
             if (!motor.is_exist) {
                 continue;
             }
-            motor.command.is_enable.set(master_to_slave_buf->read_uint8());
-            motor.command.cmd.set(master_to_slave_buf->read_int16());
+            motor.command.is_enable.set(master_to_slave_buf->read_uint8(buffer::EndianType::LITTLE));
+            motor.command.cmd.set(master_to_slave_buf->read_int16(buffer::EndianType::LITTLE));
         }
     }
 
