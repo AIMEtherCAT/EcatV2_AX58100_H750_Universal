@@ -1,0 +1,24 @@
+//
+// Created by Hang XU on 2025/10/22.
+//
+
+#ifndef ECATV2_AX58100_H750_UNIVERSAL_C_WARPPER_H
+#define ECATV2_AX58100_H750_UNIVERSAL_C_WARPPER_H
+
+#include "dma.h"
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+void soes_application(const void *);
+
+void task_manager(const void *);
+
+void dshot_dma_tc_callback(DMA_HandleTypeDef *hdma);
+
+#ifdef __cplusplus
+}
+#endif
+
+#endif //ECATV2_AX58100_H750_UNIVERSAL_C_WARPPER_H

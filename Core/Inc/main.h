@@ -46,13 +46,7 @@ extern "C" {
 
 /* Exported macro ------------------------------------------------------------*/
 /* USER CODE BEGIN EM */
-#if defined( __ICCARM__ )
-#define DMA_BUFFER \
-_Pragma("location=\".dma_buffer\"")
-#else
-#define DMA_BUFFER \
-__attribute__((section(".dma_buffer")))
-#endif
+
 /* USER CODE END EM */
 
 /* Exported functions prototypes ---------------------------------------------*/
@@ -63,10 +57,10 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define VOLTAGE_Pin GPIO_PIN_0
-#define VOLTAGE_GPIO_Port GPIOC
-#define CURRENT_Pin GPIO_PIN_5
-#define CURRENT_GPIO_Port GPIOC
+#define CHANNEL_2_Pin GPIO_PIN_0
+#define CHANNEL_2_GPIO_Port GPIOC
+#define CHANNEL_1_Pin GPIO_PIN_5
+#define CHANNEL_1_GPIO_Port GPIOC
 #define ETHERCAT_NS_Pin GPIO_PIN_11
 #define ETHERCAT_NS_GPIO_Port GPIOE
 #define LED_LBOARD_1_Pin GPIO_PIN_10

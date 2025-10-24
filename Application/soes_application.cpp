@@ -1,277 +1,224 @@
 //
-// Created by Hang XU on 21/04/2025.
+// Created by Hang XU on 21/10/2025.
 //
-#include <cstring>
-#include <vector>
-#include "cmsis_os.h"
-#include "CRC8_CRC16.h"
-
-#include "i2c_processor.h"
-#include "task_defs.h"
+#include "buffer_manager.hpp"
+#include "main.h"
+#include "peripheral_manager.hpp"
+#include "soes_application.hpp"
+#include "utypes.h"
+#include "task_manager.hpp"
 
 extern "C" {
 #include "ecat_slv.h"
-#include "device_conf.h"
-#include "fdcan.h"
-#include "usart.h"
-#include "IOUtils.h"
+#include "c_task_warpper.h"
 }
 
-#include "soes_application.h"
-#include "utypes.h"
-#include "main.h"
-#include "task_manager.h"
-#include "uart_processor.h"
-
-uint8_t global_args[1024];
-uint8_t global_inputs[1024];
-uint8_t global_outputs[1024];
 _Objects Obj;
-extern _ESCvar ESCvar;
-
-void prepare_inputs() {
-    memcpy(&global_inputs, (uint8_t *) Obj.master2slave, 80);
-}
-
-void prepare_outputs() {
-    memcpy((uint8_t *) Obj.slave2master, &global_outputs, 80);
-}
-
-void ESC_interrupt_enable(uint32_t mask) {
-    if (ESCREG_ALEVENT_DC_SYNC0 & mask) {
-        mask &= ~ESCREG_ALEVENT_DC_SYNC0;
-    }
-    if (ESCREG_ALEVENT_DC_SYNC1 & mask) {
-        //    mask &= ~ESCREG_ALEVENT_DC_SYNC1;
-    }
-    if (ESCREG_ALEVENT_DC_LATCH & mask) {
-        // mask &= ~ESCREG_ALEVENT_DC_LATCH;
-    }
-
-    ESC_ALeventmaskwrite(ESC_ALeventmaskread() | mask);
-}
-
-/** ESC interrupt disable function by the Slave stack in IRQ mode.
- *
- * @param[in]   mask     = interrupts to disable
- */
-void ESC_interrupt_disable(uint32_t mask) {
-    if (ESCREG_ALEVENT_DC_SYNC0 & mask) {
-        mask &= ~ESCREG_ALEVENT_DC_SYNC0;
-    }
-    if (ESCREG_ALEVENT_DC_SYNC1 & mask) {
-        //    mask &= ~ESCREG_ALEVENT_DC_SYNC1;
-    }
-    if (ESCREG_ALEVENT_DC_LATCH & mask) {
-        //    mask &= ~ESCREG_ALEVENT_DC_LATCH;
-    }
-
-    ESC_ALeventmaskwrite(~mask & ESC_ALeventmaskread());
-}
-
-uint8_t inited = 0;
-extern std::vector<CustomRunnable *> task_list;
-extern std::vector<CanRunnable *> can_list;
-extern std::vector<runnable_conf *> run_confs;
-extern std::vector<UartRunnable *> uart_list;
-extern std::vector<I2CRunnable *> i2c_list;
-
-void pre_state_change(uint8_t *as, uint8_t *an);
-
-esc_cfg_t _config = {
-    .user_arg = NULL,
-    .use_interrupt = 1,
+esc_cfg_t config = {
+    .user_arg = nullptr,
+    // use free-run currently
+    .use_interrupt = 0,
     .watchdog_cnt = INT32_MAX,
-    .set_defaults_hook = NULL,
-    .pre_state_change_hook = pre_state_change,
-    .post_state_change_hook = NULL,
-    .application_hook = NULL,
-    .safeoutput_override = NULL,
-    .pre_object_download_hook = NULL,
-    .post_object_download_hook = NULL,
-    .rxpdo_override = NULL,
-    .txpdo_override = NULL,
-    .esc_hw_interrupt_enable = ESC_interrupt_enable,
-    .esc_hw_interrupt_disable = ESC_interrupt_disable,
-    .esc_hw_eep_handler = NULL,
-    .esc_check_dc_handler = NULL,
+    .skip_default_initialization = false,
+    .set_defaults_hook = nullptr,
+    // ReSharper disable once CppParameterMayBeConstPtrOrRef
+    // NOLINTNEXTLINE(*-non-const-parameter)
+    .pre_state_change_hook = [](uint8_t *as, uint8_t * /* an */) {
+        if (const uint8_t target = *as >> 4 & 0x0F; target == ESCinit) {
+            aim::ecat::application::do_terminate();
+        }
+    },
+    .post_state_change_hook = nullptr,
+    .application_hook = nullptr,
+    .safeoutput_override = nullptr,
+    .pre_object_download_hook = nullptr,
+    .post_object_download_hook = nullptr,
+    .pre_object_upload_hook = nullptr,
+    .post_object_upload_hook = nullptr,
+    .rxpdo_override = nullptr,
+    .txpdo_override = nullptr,
+    .esc_hw_interrupt_enable = [](uint32_t mask) {
+        if (ESCREG_ALEVENT_DC_SYNC0 & mask) {
+            mask &= ~ESCREG_ALEVENT_DC_SYNC0;
+        }
+        ESC_ALeventmaskwrite(ESC_ALeventmaskread() | mask);
+    },
+    .esc_hw_interrupt_disable = [](uint32_t mask) {
+        if (ESCREG_ALEVENT_DC_SYNC0 & mask) {
+            mask &= ~ESCREG_ALEVENT_DC_SYNC0;
+        }
+        ESC_ALeventmaskwrite(~mask & ESC_ALeventmaskread());
+    },
+    .esc_hw_eep_handler = nullptr,
+    .esc_check_dc_handler = nullptr,
+    .get_device_id = nullptr
 };
 
+namespace aim::ecat::application {
+    using namespace io;
 
-uint32_t last_cycle_time = 0;
-uint16_t arg_recv_idx = 0;
-uint32_t task_load_time = 0;
-uint8_t pdi_irq_flag = 0;
+    uint16_t arg_recv_idx = 0;
+    ThreadSafeFlag is_task_loaded;
+    ThreadSafeFlag is_task_ready_to_load;
+    ThreadSafeFlag is_slave_ready;
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-    last_cycle_time = HAL_GetTick();
-    pdi_irq_flag = 1;
-}
-
-extern uint8_t do_task_load;
-extern uint8_t task_loaded;
-
-void cb_get_inputs() {
-    prepare_inputs();
-
-    if (!inited || Obj.master_status == MASTER_SENDING_ARGUMENTS) {
-        if (arg_recv_idx != Obj.sdo_len) {
-            Obj.slave_status = SLAVE_INITIALIZING;
-        }
-
-        arg_recv_idx = ((uint16_t) *(global_inputs + 1) << 8)
-                       | *(global_inputs + (0));
-        global_args[arg_recv_idx] = global_inputs[2];
+    ThreadSafeFlag *get_is_task_loaded() {
+        return &is_task_loaded;
     }
 
-    if (Obj.master_status == MASTER_REQUEST_REBOOT) {
-        HAL_NVIC_SystemReset();
-    } else if (Obj.master_status == MASTER_READY) {
-        if (task_loaded == 0) {
-            do_task_load = 1;
-        } else {
-            task_load_time = HAL_GetTick();
-            HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_RESET);
-            inited = 1;
-            Obj.slave_status = SLAVE_CONFIRM_READY;
-        }
-    } else if (Obj.master_status > MASTER_READY) {
-        task_spin();
-    }
-}
-
-uint32_t ts, last_ts;
-uint32_t ts2, last_ts2;
-
-void cb_set_outputs() {
-    ts = HAL_GetTick();
-    if (ts - last_ts >= 25) {
-        HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-        last_ts = ts;
+    ThreadSafeFlag *get_is_task_ready_to_load() {
+        return &is_task_ready_to_load;
     }
 
-    // cuz this module don't require any initializing
-    if (Obj.sdo_len == 0 && !inited) {
-        Obj.slave_status = SLAVE_READY;
+    ThreadSafeFlag *get_is_slave_ready() {
+        return &is_slave_ready;
     }
 
-    if (Obj.master_status == MASTER_SENDING_ARGUMENTS && !inited) {
-        if (arg_recv_idx != Obj.sdo_len) {
-            Obj.slave_status = SLAVE_INITIALIZING;
-        }
+    void init_soes_env() {
+        arg_recv_idx = 0;
+        is_task_loaded.clear();
+        is_task_ready_to_load.clear();
+        is_slave_ready.clear();
 
-        *(global_outputs) = arg_recv_idx & 0xFF;
-        *(global_outputs + 1) = arg_recv_idx >> 8 & 0xFF;
-        global_outputs[2] = global_args[arg_recv_idx];
-        if (arg_recv_idx == Obj.sdo_len) {
-            Obj.slave_status = SLAVE_READY;
-        }
+        memset(Obj.master2slave, 0, 80);
+        memset(Obj.slave2master, 0, 80);
+        Obj.sdo_len = 0;
+        Obj.master_status = MASTER_UNKNOWN;
+        Obj.slave_status = SLAVE_INITIALIZING;
+
+        buffer::get_buffer(buffer::Type::ECAT_ARGS)->reset();
+        buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->reset();
+        buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->reset();
     }
 
-    if (Obj.master_status > MASTER_READY) {
-        collect_spin();
-        Obj.slave_status = Obj.master_status;
-    }
-    prepare_outputs();
-}
-
-void soes_init() {
-    memset(global_args, 0, 1024);
-    memset(global_inputs, 0, 1024);
-    memset(global_outputs, 0, 1024);
-    init_uart_buf();
-    init_i2c_buf();
-    Obj.slave_status = SLAVE_INITIALIZING;
-    ecat_slv_init(&_config);
-}
-
-extern uint8_t do_terminate;
-extern uint8_t terminated_app_count;
-
-void reset_soem_app() {
-    do_terminate = 1;
-    for (CustomRunnable *runnable: task_list) {
-        runnable->running = 0;
-        runnable->exit();
-    }
-    do_task_load = 0;
-    task_loaded = 0;
-    task_load_time = 0;
-    last_cycle_time = 0;
-    memset(global_args, 0, 1024);
-    memset(global_inputs, 0, 1024);
-    memset(global_outputs, 0, 1024);
-    init_uart_buf();
-    init_i2c_buf();
-    task_list.clear();
-    can_list.clear();
-    uart_list.clear();
-    i2c_list.clear();
-    run_confs.clear();
-    Obj.master_status = 0;
-    Obj.slave_status = SLAVE_INITIALIZING;
-    HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_SET);
-    inited = 0;
-    do_terminate = 0;
-}
-
-void pre_state_change(uint8_t *as, uint8_t *an) {
-    uint8_t target = (*as >> 4) & 0x0F;
-    if (target == ESCinit) {
-        reset_soem_app();
-    }
-}
-
-void soes_task() {
-
-    // vTaskDelay(300);
-    // int offset = 0;
-    // uint8_t tempbuf[255];
-    // memset(tempbuf, 0, sizeof(tempbuf));
-    // write_uint16(1, tempbuf, &offset);
-    // write_uint16(0x01, tempbuf, &offset);
-    // write_uint16(0x00, tempbuf, &offset);
-    // write_uint8(1, tempbuf, &offset);
-    // write_uint8(3, tempbuf, &offset);
-    // offset = 0;
-    // App_DMMotor *app = new App_DMMotor(tempbuf, &offset);
-    // task_list.push_back(app);
-    // can_list.push_back(app);
-    // memset(tempbuf, 0, sizeof(tempbuf));
-    // uint32_t last_ts = HAL_GetTick();
-    // while (1) {
-    //
-    //     if (HAL_GetTick() - last_ts > 1000) {
-    //         if (tempbuf[0] == 0 ) {
-    //             tempbuf[0] = 1;
-    //         } else {
-    //             tempbuf[0] = 0;
-    //         }
-    //         last_ts = HAL_GetTick();
-    //     }
-    //
-    //     offset = 0;
-    //     app->collect_inputs(tempbuf, &offset);
-    //     app->run_task();
-    //     vTaskDelay(1);
-    // }
-    //
-    // return;
-
-
-    vTaskDelay(300);
-    soes_init();
-
-    while (true) {
-        ecat_slv();
-
-        // waiting state
-        if (inited == 0) {
-            ts2 = HAL_GetTick();
-            if (ts2 - last_ts2 >= 250) {
-                HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
-                last_ts2 = ts2;
+    void do_terminate() {
+        uint32_t thread_count = 0;
+        for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+            conf->runnable->running.clear();
+            if (conf->runnable->is_run_task_enabled_) {
+                thread_count++;
             }
         }
+
+        while (task::get_terminated_counter()->get() != thread_count) {
+            vTaskDelay(1);
+        }
+
+        init_soes_env();
+        buffer::clear_all_buffers();
+        task::get_terminated_counter()->reset();
+        task::get_run_confs()->clear();
     }
+
+    void cb_get_inputs_impl() {
+        buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->reset();
+        buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->raw_write(
+            reinterpret_cast<uint8_t *>(Obj.master2slave), 80);
+
+        // no any packet received yet
+        if (Obj.master_status == MASTER_UNKNOWN) {
+            return;
+        }
+
+        // sdo not loaded
+        if (Obj.master_status == MASTER_SENDING_ARGUMENTS) {
+            // read sdo idx and corresponding content
+            arg_recv_idx = buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->read_uint16(
+                buffer::EndianType::LITTLE);
+            // index starting with 1, 0 means no any meaningful content received yet
+            if (arg_recv_idx == 0) {
+                return;
+            }
+            buffer::get_buffer(buffer::Type::ECAT_ARGS)->get_buf_pointer<uint8_t>()[arg_recv_idx] = buffer::get_buffer(
+                buffer::Type::ECAT_MASTER_TO_SLAVE)->read_uint8(buffer::EndianType::LITTLE);
+            return;
+        }
+
+        if (Obj.master_status == MASTER_REQUEST_REBOOT) {
+            HAL_NVIC_SystemReset();
+            return;
+        }
+
+        // master claims that they've sent all sdo data
+        if (Obj.master_status == MASTER_READY) {
+            if (!is_task_loaded.get()) {
+                is_task_ready_to_load.set();
+            } else {
+                // turned on when task loaded
+                HAL_GPIO_WritePin(LED_LBOARD_1_GPIO_Port, LED_LBOARD_1_Pin, GPIO_PIN_RESET);
+                is_slave_ready.set();
+                Obj.slave_status = SLAVE_CONFIRM_READY;
+            }
+            return;
+        }
+
+        for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+            conf->runnable->read_from_master(buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE));
+        }
+    }
+
+    void cb_set_outputs_impl() {
+        // no any packet received yet
+        if (Obj.master_status == MASTER_UNKNOWN) {
+            return;
+        }
+
+        buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->reset();
+
+        // slave not ready
+        if (!is_slave_ready.get()) {
+            // sdo_len != 0
+            if (Obj.master_status == MASTER_SENDING_ARGUMENTS) {
+                // write back sdo lastest received idx and corresponding content for verification
+                buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->write_uint16(
+                    buffer::EndianType::LITTLE, arg_recv_idx);
+                buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->write_uint8(
+                    buffer::EndianType::LITTLE,
+                    buffer::get_buffer(buffer::Type::ECAT_ARGS)->get_buf_pointer<uint8_t>()[arg_recv_idx]
+                );
+
+                if (arg_recv_idx == Obj.sdo_len) {
+                    Obj.slave_status = SLAVE_READY;
+                }
+            } else if (Obj.master_status == MASTER_READY) {
+                Obj.slave_status = SLAVE_READY;
+            }
+        } else {
+            for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+                conf->runnable->write_to_master(buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER));
+            }
+            // this flag is for round-trip latency calculation
+            // master -> slave -> master
+            Obj.slave_status = Obj.master_status;
+        }
+
+        buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->raw_read(
+            reinterpret_cast<uint8_t *>(Obj.slave2master), 80);
+    }
+
+    // use free-run currently, no irq required
+    // void HAL_GPIO_EXTI_Callback(uint16_t /* GPIO_Pin */) {
+    //     pdi_irq_flag = 1;
+    // }
+
+    [[noreturn]] void soes_application_impl() {
+        while (true) {
+            ecat_slv();
+        }
+    }
+}
+
+// for c warppers
+using namespace aim::ecat::application;
+
+void soes_application(const void *) {
+    soes_application_impl();
+}
+
+void cb_get_inputs() {
+    cb_get_inputs_impl();
+}
+
+void cb_set_outputs() {
+    cb_set_outputs_impl();
 }

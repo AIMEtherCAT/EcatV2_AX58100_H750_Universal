@@ -1,246 +1,209 @@
 //
-// Created by Hang XU on 2024/3/15.
+// Created by Hang XU on 21/10/2025.
 //
 
-#include "task_manager.h"
-#include <queue>
-#include "utypes.h"
-#include "cmsis_os.h"
-#include "bsp_delay.h"
-#include "task_defs.h"
-#include "IOUtils.h"
+#include "task_manager.hpp"
+
+#include "buffer_manager.hpp"
+#include "peripheral_manager.hpp"
+#include "task_defs.hpp"
+#include "c_task_warpper.h"
+#include "soes_application.hpp"
 
 extern "C" {
-#include "main.h"
+#include "gpio.h"
+#include "tim.h"
 }
 
-std::vector<CustomRunnable *> task_list;
-std::vector<CanRunnable *> can_list;
-std::vector<UartRunnable *> uart_list;
-std::vector<I2CRunnable *> i2c_list;
-std::vector<runnable_conf *> run_confs;
-
-void CanRunnable::can_recv(FDCAN_RxHeaderTypeDef *, unsigned char *) {
+void task_thread_func(void const *argument) {
+    aim::ecat::task::task_thread_func_impl(argument);
+    vTaskDelete(nullptr);
 }
 
-void UartRunnable::uart_recv(uint16_t, uint8_t *) {
-}
+namespace aim::ecat::task {
+    osMutexId runConfMutexHandle;
 
-void UartRunnable::uart_recv_err() {
-}
+    ThreadSafeCounter terminated_counter;
 
-void UartRunnable::uart_dma_tx_finished_callback() {
-}
-
-void I2CRunnable::i2c_recv(uint8_t *) {
-}
-
-void I2CRunnable::i2c_recv_err() {
-}
-
-void I2CRunnable::i2c_dma_tx_finished_callback() {
-}
-
-void CustomRunnable::run_task() {
-}
-
-void CustomRunnable::collect_outputs(unsigned char *, int *) {
-}
-
-void CustomRunnable::collect_inputs(unsigned char *, int *) {
-}
-
-void CustomRunnable::exit() {
-}
-
-std::vector<osThreadId> taskHandles;
-std::vector<const osThreadDef_t *> taskDefs;
-
-extern uint8_t global_inputs[1024];
-extern uint8_t global_outputs[1024];
-extern uint8_t global_args[1024];
-
-void task_spin() {
-    int input_offset = 0;
-    for (CustomRunnable *runnable: task_list) {
-        runnable->collect_inputs(global_inputs, &input_offset);
+    ThreadSafeCounter *get_terminated_counter() {
+        return &terminated_counter;
     }
-}
 
-void collect_spin() {
-    int output_offset = 0;
-    for (CustomRunnable *runnable: task_list) {
-        runnable->collect_outputs(global_outputs, &output_offset);
+    std::vector<std::shared_ptr<runnable_conf> > run_confs;
+
+    std::vector<std::shared_ptr<runnable_conf> > *get_run_confs() {
+        return &run_confs;
     }
-}
 
-uint8_t do_terminate = 0;
-uint8_t terminated_app_count = 0;
+    void init_task_manager() {
+        osMutexDef(runConfMutex);
+        runConfMutexHandle = osMutexCreate(osMutex(runConfMutex));
+    }
 
-__attribute__((noreturn)) void soes_device_handle(void const *argument) {
-    runnable_conf *conf_inst = (runnable_conf *) argument;
-    while (true) {
-        if (do_terminate == 1) {
-            conf_inst->runnable->exit();
-            terminated_app_count++;
-            vTaskDelete(nullptr);
-            return;
+    void task_thread_func_impl(void const *argument) {
+        std::shared_ptr<runnable_conf> conf_inst;
+        osMutexWait(runConfMutexHandle, osWaitForever);
+        for (std::shared_ptr<runnable_conf> &ptr: run_confs) {
+            if (ptr.get() == argument) {
+                conf_inst = ptr;
+                break;
+            }
+        }
+        osMutexRelease(runConfMutexHandle);
+
+        while (true) {
+            if (!conf_inst->runnable->running.get()) {
+                break;
+            }
+            conf_inst->runnable->run_task();
+            vTaskDelay(conf_inst->runnable->period);
         }
 
-        conf_inst->runnable->run_task();
-        vTaskDelay(conf_inst->period);
+        conf_inst->runnable->exit();
+        terminated_counter.increment();
     }
-}
 
-void task_load() {
-    int offset = 1;
-    uint8_t task_count = read_uint8(global_args, &offset);
+    static void load_task() {
+        buffer::get_buffer(buffer::Type::ECAT_ARGS)->reset_index();
+        buffer::get_buffer(buffer::Type::ECAT_ARGS)->skip(1);
+        const uint8_t task_count = buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8(buffer::EndianType::LITTLE);
+        while (run_confs.size() < task_count) {
+            auto conf = std::make_shared<runnable_conf>();
 
-    while (task_list.size() != task_count) {
-        switch (read_uint8(global_args, &offset)) {
-            case DJIRC_APP_ID: {
-                App_DJI_RC *app = new App_DJI_RC(global_args, &offset);
-                task_list.push_back(app);
-                uart_list.push_back(app);
-                break;
+            switch (buffer::get_buffer(buffer::Type::ECAT_ARGS)->read_uint8(buffer::EndianType::LITTLE)) {
+                case static_cast<uint8_t>(TaskType::DBUS_RC): {
+                    conf->is_uart_task.set();
+                    conf->runnable = std::make_unique<dbus_rc::DBUS_RC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::LK_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<lk_motor::LK_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::HIPNUC_IMU_CAN): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<hipnuc_imu::HIPNUC_IMU_CAN>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::DSHOT): {
+                    conf->runnable = std::make_unique<pwm::DSHOT600>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::DJI_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<dji_motor::DJI_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::ONBOARD_PWM): {
+                    conf->runnable = std::make_unique<pwm::PWM_ONBOARD>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::EXTERNAL_PWM): {
+                    conf->runnable = std::make_unique<pwm::PWM_EXTERNAL>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::MS5876_30BA): {
+                    conf->is_i2c_task.set();
+                    conf->runnable = std::make_unique<ms5876::MS5837_30BA>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::ADC): {
+                    conf->runnable = std::make_unique<adc::ADC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::CAN_PMU): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<pmu_uavcan::PMU_UAVCAN>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::SBUS_RC): {
+                    conf->is_uart_task.set();
+                    conf->runnable = std::make_unique<sbus_rc::SBUS_RC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                case static_cast<uint8_t>(TaskType::DM_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<dm_motor::DM_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
+                default: {
+                }
             }
-            case SBUS_RC_APP_ID: {
-                App_SBUS_RC *app = new App_SBUS_RC(global_args, &offset);
-                task_list.push_back(app);
-                uart_list.push_back(app);
-                break;
-            }
-            case HIPNUC_IMU_CAN_APP_ID: {
-                App_HIPNUC_IMU *app = new App_HIPNUC_IMU(global_args, &offset);
-                task_list.push_back(app);
-                can_list.push_back(app);
-                break;
-            }
-            case DSHOT_APP_ID: {
-                App_DSHOT *app = new App_DSHOT(global_args, &offset);
-                task_list.push_back(app);
-                break;
-            }
-            case EXTERNAL_PWM_APP_ID: {
-                App_External_PWM *app = new App_External_PWM(global_args, &offset);
-                task_list.push_back(app);
-                uart_list.push_back(app);
-                break;
-            }
-            case VANILLA_PWM_APP_ID: {
-                App_Vanilla_PWM *app = new App_Vanilla_PWM(global_args, &offset);
-                task_list.push_back(app);
-                break;
-            }
-            case MS5876_30BA_APP_ID: {
-                App_MS5837_30BA *app = new App_MS5837_30BA(global_args, &offset);
-                task_list.push_back(app);
-                i2c_list.push_back(app);
-                break;
-            }
-            case ADC_APP_ID: {
-                App_ADC *app = new App_ADC(global_args, &offset);
-                task_list.push_back(app);
-                break;
-            }
-            case CAN_PMU_APP_ID: {
-                App_CAN_PMU *app = new App_CAN_PMU(global_args, &offset);
-                task_list.push_back(app);
-                can_list.push_back(app);
-                break;
-            }
-            case DJICAN_APP_ID: {
-                App_DJIMotor *app = new App_DJIMotor(global_args, &offset);
-                task_list.push_back(app);
-                can_list.push_back(app);
-                runnable_conf *conf = new runnable_conf();
-                conf->runnable = app;
-                conf->period = app->period;
-                run_confs.push_back(conf);
 
-                const osThreadDef_t task = {
-                    nullptr, (soes_device_handle),
-                    (osPriorityRealtime), (0), (512),
-                    NULL,
-                    NULL
+            run_confs.push_back(conf);
+            if (conf->runnable->is_run_task_enabled_) {
+                conf->thread_def = {
+                    .name = nullptr,
+                    .pthread = task_thread_func,
+                    .tpriority = osPriorityRealtime,
+                    .instances = 0,
+                    .stacksize = 1024,
+                    .buffer = nullptr,
+                    .controlblock = nullptr
                 };
-                taskDefs.push_back(&task);
-                taskHandles.push_back(
-                    osThreadCreate(taskDefs.back(), run_confs.back()));
-                break;
+                osThreadCreate(&conf->thread_def, conf.get());
             }
-            case DM_MOTOR_APP_ID: {
-                App_DMMotor *app = new App_DMMotor(global_args, &offset);
-                task_list.push_back(app);
-                can_list.push_back(app);
-                runnable_conf *conf = new runnable_conf();
-                conf->runnable = app;
-                conf->period = app->period;
-                run_confs.push_back(conf);
+        }
+    }
 
-                const osThreadDef_t task = {
-                    nullptr, (soes_device_handle),
-                    (osPriorityRealtime), (0), (512),
-                    NULL,
-                    NULL
-                };
-                taskDefs.push_back(&task);
-                taskHandles.push_back(
-                    osThreadCreate(taskDefs.back(), run_confs.back()));
-                break;
-            }
-            case LK_APP_ID: {
-                App_LkMotor *app = new App_LkMotor(global_args, &offset);
-                task_list.push_back(app);
-                can_list.push_back(app);
-                runnable_conf *conf = new runnable_conf();
-                conf->runnable = app;
-                conf->period = app->period;
-                run_confs.push_back(conf);
+    static ThreadSafeFlag last_slave_ready_flag;
 
-                const osThreadDef_t task = {
-                    nullptr, (soes_device_handle),
-                    (osPriorityRealtime), (0), (512),
-                    NULL,
-                    NULL
-                };
-                taskDefs.push_back(&task);
-                taskHandles.push_back(
-                    osThreadCreate(taskDefs.back(), run_confs.back()));
-                break;
+    [[noreturn]] void task_manager_impl() {
+        while (true) {
+            if (application::get_is_task_loaded()->get()) {
+                HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_RESET);
+            } else {
+                HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_SET);
             }
+
+            if (last_slave_ready_flag.get() != application::get_is_slave_ready()->get()) {
+                if (application::get_is_slave_ready()->get()) {
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_LOADED_ARR);
+                    __HAL_TIM_SET_COUNTER(&htim17, 0);
+                    last_slave_ready_flag.set();
+                } else {
+                    __HAL_TIM_SET_AUTORELOAD(&htim17, LED_TASK_NOT_LOADED_ARR);
+                    __HAL_TIM_SET_COUNTER(&htim17, 0);
+                    last_slave_ready_flag.clear();
+                }
+            }
+
+            if (application::get_is_task_ready_to_load()->get()) {
+                load_task();
+                application::get_is_task_ready_to_load()->clear();
+                application::get_is_task_loaded()->set();
+            }
+
+            vTaskDelay(10);
         }
     }
 }
 
-uint8_t do_task_load = 0;
-uint8_t task_loaded = 0;
-uint32_t ts3, last_ts3;
-uint32_t within = 0;
-
-void soes_task_loader() {
-    while (1) {
-        if (HAL_GetTick() - within <= 250) {
-            ts3 = HAL_GetTick();
-            if (ts3 - last_ts3 >= 25) {
-                HAL_GPIO_TogglePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin);
-                last_ts3 = ts3;
-            }
-        } else {
-            HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_SET);
-        }
-
-
-        if (do_task_load == 1 && task_loaded == 0) {
-            within = HAL_GetTick();
-
-            taskENTER_CRITICAL();
-            task_load();
-            taskEXIT_CRITICAL();
-
-            task_loaded = 1;
-        }
-
-        vTaskDelay(5);
-    }
+void task_manager(const void *) {
+    aim::ecat::task::task_manager_impl();
 }
