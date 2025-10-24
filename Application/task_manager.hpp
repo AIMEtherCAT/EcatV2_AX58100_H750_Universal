@@ -16,7 +16,6 @@ namespace aim::ecat::task {
         ThreadSafeFlag is_can_task{};
         ThreadSafeFlag is_uart_task{};
         ThreadSafeFlag is_i2c_task{};
-        ThreadSafeFlag is_adc_task{};
     };
 
     void task_thread_func_impl(void const *argument);

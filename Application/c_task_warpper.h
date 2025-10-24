@@ -15,7 +15,7 @@ void soes_application(const void *);
 
 void task_manager(const void *);
 
-void dshot_dma_tc_callback(DMA_HandleTypeDef * hdma);
+void dshot_dma_tc_callback(DMA_HandleTypeDef *hdma);
 
 #ifdef __cplusplus
 }

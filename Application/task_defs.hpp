@@ -112,7 +112,7 @@ namespace aim::ecat::task {
 
         ~UartRunnable() override = default;
 
-        virtual void uart_recv(uint16_t size) {
+        virtual void uart_recv(const uint16_t size) {
             UNUSED(size);
         }
 

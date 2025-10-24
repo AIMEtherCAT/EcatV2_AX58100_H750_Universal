@@ -118,6 +118,7 @@ namespace aim::ecat::task {
                     break;
                 }
                 case static_cast<uint8_t>(TaskType::MS5876_30BA): {
+                    conf->is_i2c_task.set();
                     conf->runnable = std::make_unique<ms5876::MS5837_30BA>(
                         buffer::get_buffer(buffer::Type::ECAT_ARGS)
                     );

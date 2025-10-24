@@ -26,7 +26,7 @@ namespace aim::algorithm {
 
         [[nodiscard]] float get_output() const;
 
-        void basic_init(const float kp, const float ki, const float kd, const float max_out, float max_i_out) {
+        void basic_init(const float kp, const float ki, const float kd, const float max_out, const float max_i_out) {
             kp_ = kp;
             ki_ = ki;
             kd_ = kd;

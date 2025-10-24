@@ -100,8 +100,6 @@ int main(void)
   MX_SPI4_Init();
   MX_TIM17_Init();
   /* USER CODE BEGIN 2 */
-  // wait for spi ready
-  // HAL_Delay(500);
   initialize();
 
   /* USER CODE END 2 */

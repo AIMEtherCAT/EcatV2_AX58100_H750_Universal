@@ -157,7 +157,7 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t /* RxFifo1I
     process_can_data(hfdcan, &rx_header, rx_data);
 }
 
-// ReSharper disable once CppParameterMayBeConst
+// ReSharper disable once CppParameterMayBeConstPtrOrRef
 void dshot_dma_tc_callback(DMA_HandleTypeDef *hdma) {
     if (const TIM_HandleTypeDef *htim = static_cast<TIM_HandleTypeDef *>(hdma->Parent);
         hdma == htim->hdma[TIM_DMA_ID_CC1]) {
