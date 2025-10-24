@@ -560,17 +560,5 @@ void HSEM1_IRQHandler(void)
 }
 
 /* USER CODE BEGIN 1 */
-void dshot_dma_tc_callback(const DMA_HandleTypeDef *hdma) {
-  const TIM_HandleTypeDef *htim = hdma->Parent;
 
-  if (hdma == htim->hdma[TIM_DMA_ID_CC1]) {
-    __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
-  } else if (hdma == htim->hdma[TIM_DMA_ID_CC2]) {
-    __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC2);
-  } else if (hdma == htim->hdma[TIM_DMA_ID_CC3]) {
-    __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC3);
-  } else if (hdma == htim->hdma[TIM_DMA_ID_CC4]) {
-    __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
-  }
-}
 /* USER CODE END 1 */

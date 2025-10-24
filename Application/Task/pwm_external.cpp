@@ -8,7 +8,6 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::pwm {
-
     PWM_EXTERNAL::PWM_EXTERNAL(buffer::Buffer *buffer) : UartRunnable(true) {
         period = 1;
         switch (buffer->read_uint8()) {
@@ -27,9 +26,9 @@ namespace aim::ecat::task::pwm {
         expected_period_ = buffer->read_uint16();
         enabled_channel_count_ = buffer->read_uint8();
         const uint16_t init_value = buffer->read_uint16();
-        control_packet.expected_period = expected_period_;
-        for (int i = 0 ; i < enabled_channel_count_ ; i ++) {
-            control_packet.servo_cmd[i] = init_value;
+        control_packet_.expected_period = expected_period_;
+        for (int i = 0; i < enabled_channel_count_; i++) {
+            control_packet_.servo_cmd[i] = init_value;
         }
         send_packet();
         // set last send time to now because it is the first send
@@ -38,7 +37,7 @@ namespace aim::ecat::task::pwm {
 
     void PWM_EXTERNAL::read_from_master(buffer::Buffer *master_to_slave_buf) {
         for (int i = 0; i < enabled_channel_count_; i++) {
-            control_packet.servo_cmd[i] = master_to_slave_buf->read_uint16();
+            control_packet_.servo_cmd[i] = master_to_slave_buf->read_uint16();
         }
         send_packet();
     }

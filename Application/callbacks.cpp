@@ -3,6 +3,7 @@
 //
 #include "peripheral_manager.hpp"
 #include "task_manager.hpp"
+#include "c_task_warpper.h"
 
 using namespace aim::ecat::task;
 using namespace aim::hardware;
@@ -101,4 +102,17 @@ void HAL_FDCAN_RxFifo1Callback(FDCAN_HandleTypeDef *hfdcan, uint32_t /* RxFifo1I
 
     HAL_FDCAN_GetRxMessage(hfdcan, FDCAN_RX_FIFO1, &rx_header, rx_data);
     process_can_data(hfdcan, &rx_header, rx_data);
+}
+
+void dshot_dma_tc_callback(DMA_HandleTypeDef *hdma) {
+    if (const TIM_HandleTypeDef *htim = static_cast<TIM_HandleTypeDef *>(hdma->Parent);
+        hdma == htim->hdma[TIM_DMA_ID_CC1]) {
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC1);
+    } else if (hdma == htim->hdma[TIM_DMA_ID_CC2]) {
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC2);
+    } else if (hdma == htim->hdma[TIM_DMA_ID_CC3]) {
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC3);
+    } else if (hdma == htim->hdma[TIM_DMA_ID_CC4]) {
+        __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
+    }
 }

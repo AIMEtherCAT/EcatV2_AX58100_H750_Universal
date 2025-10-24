@@ -6,26 +6,7 @@
 #include "pid.h"
 
 
-uint16_t dshot_prepare_packet(uint16_t value) {
-    uint16_t packet;
-    uint8_t dshot_telemetry = 0;
 
-    packet = (value << 1) | (dshot_telemetry);
-
-    // compute checksum
-    unsigned csum = 0;
-    unsigned csum_data = packet;
-
-    for (int i = 0; i < 3; i++) {
-        csum ^= csum_data; // xor data by nibbles
-        csum_data >>= 4;
-    }
-
-    csum &= 0xf;
-    packet = (packet << 4) | csum;
-
-    return packet;
-}
 
 void dshot_prepare_dmabuffer(uint32_t *motor_dmabuffer, uint16_t value) {
     uint16_t packet;

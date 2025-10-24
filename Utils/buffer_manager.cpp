@@ -7,18 +7,18 @@
 #include <memory>
 #include <ranges>
 
-#include "settings.h"
+#include "task_defs.hpp"
 
 namespace aim::io::buffer {
-    DMA_BUFFER static uint32_t dshot1_motor1_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot1_motor2_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot1_motor3_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot1_motor4_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot1_motor1_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot1_motor2_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot1_motor3_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot1_motor4_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
 
-    DMA_BUFFER static uint32_t dshot2_motor1_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot2_motor2_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot2_motor3_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot2_motor4_dmabuffer[DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot2_motor1_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot2_motor2_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot2_motor3_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot2_motor4_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
 
     DMA_BUFFER static uint8_t i2c3_recv_buf[512];
     DMA_BUFFER static uint8_t i2c3_send_buf[512];

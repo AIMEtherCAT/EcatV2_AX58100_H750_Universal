@@ -6,7 +6,6 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::pmu_uavcan {
-
     PMU_UAVCAN::PMU_UAVCAN(buffer::Buffer */* buffer */) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
@@ -50,7 +49,6 @@ namespace aim::ecat::task::pmu_uavcan {
                 is_first &&
                 static_cast<uint8_t>(tail_.tid - rx_state_.transfer_id & 0x1F) > 1
             )) {
-
             rx_state_.initialized = 1;
             rx_state_.transfer_id = tail_.tid;
             rx_state_.toggle = 0;
@@ -112,5 +110,4 @@ namespace aim::ecat::task::pmu_uavcan {
         recv_buf_.read(recv_buf, 6);
         slave_to_master_buf->write(recv_buf, 6);
     }
-
 }

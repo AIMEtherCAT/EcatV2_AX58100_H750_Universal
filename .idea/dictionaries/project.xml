@@ -2,6 +2,7 @@
   <dictionary name="project">
     <words>
       <w>deinit</w>
+      <w>dshot</w>
       <w>exti</w>
       <w>huart</w>
       <w>iout</w>

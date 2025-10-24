@@ -8,7 +8,6 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::pwm {
-
     PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false) {
         uint32_t tim_freq = 0;
 
@@ -50,37 +49,27 @@ namespace aim::ecat::task::pwm {
         }
 
         const uint16_t init_value = buffer->read_uint16();
-        command_.channel1.set(calculate_compare(init_value));
-        command_.channel2.set(calculate_compare(init_value));
-        command_.channel3.set(calculate_compare(init_value));
-        command_.channel4.set(calculate_compare(init_value));
+        command_.channel1 = calculate_compare(init_value);
+        command_.channel2 = calculate_compare(init_value);
+        command_.channel3 = calculate_compare(init_value);
+        command_.channel4 = calculate_compare(init_value);
 
         __HAL_TIM_SET_PRESCALER(tim_inst_, setting_pair_.psc);
         __HAL_TIM_SET_AUTORELOAD(tim_inst_, setting_pair_.arr);
+
+        send_signal();
+        HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_1);
+        HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_2);
+        HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_3);
+        HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_4);
     }
 
     void PWM_ONBOARD::read_from_master(buffer::Buffer *master_to_slave_buf) {
+        command_.channel1 = calculate_compare(master_to_slave_buf->read_uint16());
+        command_.channel2 = calculate_compare(master_to_slave_buf->read_uint16());
+        command_.channel3 = calculate_compare(master_to_slave_buf->read_uint16());
+        command_.channel4 = calculate_compare(master_to_slave_buf->read_uint16());
 
-        #pragma clang diagnostic push
-        #pragma clang diagnostic ignored "-Wdeprecated-volatile"
-        __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_1, command_.channel1.get());
-        __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_2, command_.channel2.get());
-        __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_3, command_.channel3.get());
-        __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_4, command_.channel4.get());
-        #pragma clang diagnostic pop
-
-        if (!is_pwm_started.get()) {
-            HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_1);
-            HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_2);
-            HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_3);
-            HAL_TIM_PWM_Start(tim_inst_, TIM_CHANNEL_4);
-            is_pwm_started.set();
-        }
-
-        command_.channel1.set(calculate_compare(master_to_slave_buf->read_uint16()));
-        command_.channel2.set(calculate_compare(master_to_slave_buf->read_uint16()));
-        command_.channel3.set(calculate_compare(master_to_slave_buf->read_uint16()));
-        command_.channel4.set(calculate_compare(master_to_slave_buf->read_uint16()));
+        send_signal();
     }
-
 }

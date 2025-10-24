@@ -8,7 +8,8 @@
 #include <memory>
 #include <vector>
 #include <atomic>
-
+#include "c_task_warpper.h"
+#include "peripheral_manager.hpp"
 #include "pid.hpp"
 #include "thread_safe_utils.hpp"
 #include "crc16.hpp"
@@ -39,8 +40,8 @@ namespace aim::ecat::task {
 
     class CustomRunnable {
     public:
-
-        explicit CustomRunnable(const bool is_run_task_enabled) : is_run_task_enabled_(is_run_task_enabled) {}
+        explicit CustomRunnable(const bool is_run_task_enabled) : is_run_task_enabled_(is_run_task_enabled) {
+        }
 
         virtual ~CustomRunnable() = default;
 
@@ -79,13 +80,13 @@ namespace aim::ecat::task {
         }
 
     protected:
-
         peripheral::Peripheral *peripheral_{};
     };
 
     class CanRunnable : public CustomRunnable {
     public:
-        explicit CanRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {}
+        explicit CanRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
+        }
 
         ~CanRunnable() override = default;
 
@@ -106,11 +107,14 @@ namespace aim::ecat::task {
 
     class UartRunnable : public CustomRunnable {
     public:
-        explicit UartRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {}
+        explicit UartRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
+        }
 
         ~UartRunnable() override = default;
 
-        virtual void uart_recv(uint16_t size);
+        virtual void uart_recv(uint16_t size) {
+            UNUSED(size);
+        }
 
         virtual void uart_err() {
         }
@@ -122,7 +126,8 @@ namespace aim::ecat::task {
     // ReSharper disable once CppClassCanBeFinal
     class I2CRunnable : public CustomRunnable {
     public:
-        explicit I2CRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {}
+        explicit I2CRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
+        }
 
         ~I2CRunnable() override = default;
 
@@ -358,7 +363,6 @@ namespace aim::ecat::task {
     }
 
     namespace pmu_uavcan {
-
         constexpr int BUF_SIZE = 64;
         // ms
         constexpr int TID_TIMEOUT = 1000;
@@ -366,7 +370,7 @@ namespace aim::ecat::task {
         // ms
         constexpr int STATE_BROADCAST_PERIOD = 1000;
 
-         struct RxState {
+        struct RxState {
             uint8_t buffer[BUF_SIZE];
             uint16_t len;
             uint16_t crc;
@@ -381,7 +385,7 @@ namespace aim::ecat::task {
             uint8_t end;
             uint8_t toggle;
             uint8_t tid;
-        } ;
+        };
 
         class PMU_UAVCAN final : public CanRunnable {
         public:
@@ -428,15 +432,14 @@ namespace aim::ecat::task {
     }
 
     namespace pwm {
-
         constexpr uint32_t TIM2_FREQ = 240000000;
         constexpr uint32_t TIM3_FREQ = 240000000;
 
         struct ControlCommand {
-            ThreadSafeValue<uint16_t> channel1{};
-            ThreadSafeValue<uint16_t> channel2{};
-            ThreadSafeValue<uint16_t> channel3{};
-            ThreadSafeValue<uint16_t> channel4{};
+            uint16_t channel1{};
+            uint16_t channel2{};
+            uint16_t channel3{};
+            uint16_t channel4{};
         };
 
         struct TIMSettingPair {
@@ -454,7 +457,6 @@ namespace aim::ecat::task {
             TIM_HandleTypeDef *tim_inst_{nullptr};
             ControlCommand command_{};
             TIMSettingPair setting_pair_{};
-            ThreadSafeFlag is_pwm_started{false};
             uint16_t expected_period_{};
 
             [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const {
@@ -463,6 +465,16 @@ namespace aim::ecat::task {
                     static_cast<double>(expected_period_) *
                     this->setting_pair_.arr
                 ));
+            }
+
+            void send_signal() const {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-volatile"
+                __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_1, command_.channel1);
+                __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_2, command_.channel2);
+                __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_3, command_.channel3);
+                __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_4, command_.channel4);
+#pragma clang diagnostic pop
             }
         };
 
@@ -490,12 +502,12 @@ namespace aim::ecat::task {
             uint16_t expected_period_{};
             ThreadSafeTimestamp last_send_time_{};
             ThreadSafeTimestamp last_send_finished_time_{};
-            ThreadSafeTimestamp last_reset_time{};
-            ExternalServoBoardControlPacket control_packet;
+            ThreadSafeTimestamp last_reset_time_{};
+            ExternalServoBoardControlPacket control_packet_;
 
             void send_packet() {
                 uint8_t cmd_buf[37] = {};
-                memcpy(cmd_buf, &control_packet, 37);
+                memcpy(cmd_buf, &control_packet_, 37);
                 algorithm::crc16::append_CRC16_check_sum(cmd_buf, 37);
                 // if not busy, then return true, means data sent
                 if (get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37)) {
@@ -504,25 +516,106 @@ namespace aim::ecat::task {
             }
         };
 
+        constexpr uint32_t DSHOT600_FREQ = 12000000;
+
+        constexpr uint32_t DSHOT_DMA_BUFFER_SIZE = 18;
+        constexpr uint8_t MOTOR_BIT_0 = 7;
+        constexpr uint8_t MOTOR_BIT_1 = 14;
+        constexpr uint32_t MOTOR_BITLENGTH = 20;
+        constexpr uint32_t DSHOT_FRAME_SIZE = 16;
+
+        inline uint16_t dshot_prepare_packet(const uint16_t value) {
+            constexpr uint8_t dshot_telemetry = 0;
+            uint16_t packet = value << 1 | dshot_telemetry;
+
+            // compute checksum
+            unsigned csum = 0;
+            unsigned csum_data = packet;
+
+            for (int i = 0; i < 3; i++) {
+                // xor data by nibbles
+                csum ^= csum_data;
+                csum_data >>= 4;
+            }
+
+            csum &= 0xf;
+            packet = packet << 4 | csum;
+
+            return packet;
+        }
+
+        inline void dshot_prepare_dma_buffer(uint32_t *motor_dma_buffer, const uint16_t value) {
+            constexpr uint8_t dshot_telemetry = 0;
+            uint16_t packet = static_cast<uint16_t>(algorithm::limit_max_min(value, 2047, 0)) << 1 | dshot_telemetry;
+
+            // compute checksum
+            unsigned csum = 0;
+            unsigned csum_data = packet;
+
+            for (int i = 0; i < 3; i++) {
+                // xor data by nibbles
+                csum ^= csum_data;
+                csum_data >>= 4;
+            }
+
+            csum &= 0xf;
+            packet = packet << 4 | csum;
+
+            for (int i = 0; i < 16; i++) {
+                motor_dma_buffer[i] = packet & 0x8000 ? MOTOR_BIT_1 : MOTOR_BIT_0;
+                packet <<= 1;
+            }
+
+            motor_dma_buffer[16] = 0;
+            motor_dma_buffer[17] = 0;
+        }
+
         class DSHOT600 final : public CustomRunnable {
         public:
             explicit DSHOT600(buffer::Buffer *buffer);
 
             void read_from_master(buffer::Buffer *master_to_slave_buf) override;
 
+            void exit() override;
+
         private:
             TIM_HandleTypeDef *tim_inst_{nullptr};
             ControlCommand command_{};
-            TIMSettingPair setting_pair_{};
-            ThreadSafeFlag is_pwm_started{false};
-            uint16_t expected_period_{};
+            uint32_t *motor1_buffer{};
+            uint32_t *motor2_buffer{};
+            uint32_t *motor3_buffer{};
+            uint32_t *motor4_buffer{};
 
-            [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const {
-                return static_cast<uint32_t>(lround(
-                    static_cast<double>(expected_high_pulse) /
-                    static_cast<double>(expected_period_) *
-                    this->setting_pair_.arr
-                ));
+            void init_dshot_dma(const uint32_t tim_freq) const {
+                const uint16_t dshot_psc = lrintf(static_cast<float>(tim_freq) / DSHOT600_FREQ + 0.01f) - 1;
+                __HAL_TIM_SET_PRESCALER(tim_inst_, dshot_psc);
+                __HAL_TIM_SET_AUTORELOAD(tim_inst_, MOTOR_BITLENGTH);
+
+                tim_inst_->hdma[TIM_DMA_ID_CC1]->XferCpltCallback = dshot_dma_tc_callback;
+                tim_inst_->hdma[TIM_DMA_ID_CC2]->XferCpltCallback = dshot_dma_tc_callback;
+                tim_inst_->hdma[TIM_DMA_ID_CC3]->XferCpltCallback = dshot_dma_tc_callback;
+                tim_inst_->hdma[TIM_DMA_ID_CC4]->XferCpltCallback = dshot_dma_tc_callback;
+            }
+
+            void send_signal() const {
+                send_dma_request(motor1_buffer, command_.channel1, &tim_inst_->Instance->CCR1, TIM_DMA_ID_CC1,
+                                 TIM_DMA_CC1);
+                send_dma_request(motor2_buffer, command_.channel2, &tim_inst_->Instance->CCR2, TIM_DMA_ID_CC2,
+                                 TIM_DMA_CC2);
+                send_dma_request(motor3_buffer, command_.channel3, &tim_inst_->Instance->CCR3, TIM_DMA_ID_CC3,
+                                 TIM_DMA_CC3);
+                send_dma_request(motor4_buffer, command_.channel4, &tim_inst_->Instance->CCR4, TIM_DMA_ID_CC4,
+                                 TIM_DMA_CC4);
+            }
+
+            void send_dma_request(uint32_t *buffer, const uint16_t value, volatile uint32_t *ccr, const uint16_t dma_id,
+                                  const uint32_t dma_cc) const {
+                if (HAL_DMA_GetState(tim_inst_->hdma[dma_id]) == HAL_DMA_STATE_READY) {
+                    dshot_prepare_dma_buffer(buffer, value);
+                    HAL_DMA_Start_IT(tim_inst_->hdma[dma_id], reinterpret_cast<uint32_t>(buffer),
+                                     reinterpret_cast<uint32_t>(ccr), DSHOT_DMA_BUFFER_SIZE);
+                    __HAL_TIM_ENABLE_DMA(tim_inst_, dma_cc);
+                }
             }
         };
     }
