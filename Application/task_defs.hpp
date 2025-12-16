@@ -438,6 +438,7 @@ namespace aim::ecat::task {
             ThreadSafeValue<int16_t> rpm{};
             ThreadSafeValue<int16_t> current{};
             ThreadSafeValue<uint8_t> temperature{};
+            ThreadSafeValue<uint8_t> error{};
             ThreadSafeTimestamp last_receive_time{};
         };
 

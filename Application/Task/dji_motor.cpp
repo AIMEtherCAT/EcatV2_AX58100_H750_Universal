@@ -110,6 +110,7 @@ namespace aim::ecat::task::dji_motor {
             slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, motor.report.rpm.get());
             slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, motor.report.current.get());
             slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, motor.report.temperature.get());
+            slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, motor.report.error.get());
         }
     }
 
@@ -133,6 +134,7 @@ namespace aim::ecat::task::dji_motor {
             motor.report.rpm.set(big_endian::read_int16(rx_data, &index));
             motor.report.current.set(big_endian::read_int16(rx_data, &index));
             motor.report.temperature.set(big_endian::read_uint8(rx_data, &index));
+            motor.report.error.set(big_endian::read_uint8(rx_data, &index));
             motor.report.last_receive_time.set_current();
             return;
         }
