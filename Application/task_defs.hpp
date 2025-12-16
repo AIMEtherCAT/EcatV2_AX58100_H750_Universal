@@ -459,6 +459,7 @@ namespace aim::ecat::task {
             CtrlMode mode{};
             ControlCommand command{};
             uint32_t report_packet_id{};
+            uint8_t cmd_packet_idx{};
 
             algorithm::PID speed_pid{};
             algorithm::PID angle_pid{};
@@ -494,6 +495,7 @@ namespace aim::ecat::task {
 
         private:
             Motor motors_[4]{};
+            int16_t cmds_[4]{};
         };
     }
 

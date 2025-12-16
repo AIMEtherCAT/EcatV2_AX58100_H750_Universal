@@ -26,6 +26,20 @@ namespace aim::ecat::task::dji_motor {
             motor.report_packet_id = buffer->read_uint32(buffer::EndianType::LITTLE);
             if (motor.report_packet_id != 0) {
                 motor.is_exist = true;
+
+                if (shared_tx_header_.Identifier == 0x200) {
+                    // c610/c620 id1-4
+                    motor.cmd_packet_idx = motor.report_packet_id - 0x201;
+                } else if (shared_tx_header_.Identifier == 0x1ff
+                           || shared_tx_header_.Identifier == 0x1fe) {
+                    // c610/c620 id5-8
+                    // or 6020 id1-4
+                    motor.cmd_packet_idx = motor.report_packet_id - 0x205;
+                } else if (shared_tx_header_.Identifier == 0x2ff
+                           || shared_tx_header_.Identifier == 0x2fe) {
+                    // 6020 id5-8
+                    motor.cmd_packet_idx = motor.report_packet_id - 0x209;
+                }
             }
         }
 
@@ -125,52 +139,47 @@ namespace aim::ecat::task::dji_motor {
     }
 
     void DJI_MOTOR::run_task() {
-        memset(shared_tx_buf_, 0, 8);
-        int index = 0;
+        memset(cmds_, 0, 8);
 
         for (Motor &motor: motors_) {
             if (!motor.is_exist) {
-                big_endian::write_uint16(0, shared_tx_buf_, &index);
                 continue;
             }
             if (!motor.is_online()) {
-                big_endian::write_uint16(0, shared_tx_buf_, &index);
                 continue;
             }
 
             if (motor.command.is_enable.get()) {
                 switch (motor.mode) {
                     case CtrlMode::OPEN_LOOP_CURRENT: {
-                        big_endian::write_int16(motor.command.cmd.get(), shared_tx_buf_,
-                                                &index);
+                        cmds_[motor.cmd_packet_idx] = motor.command.cmd.get();
                         break;
                     }
                     case CtrlMode::SPEED: {
-                        big_endian::write_int16(
-                            static_cast<int16_t>(motor.speed_pid.calculate(
-                                motor.report.rpm.get(),
-                                motor.command.cmd.get())),
-                            shared_tx_buf_, &index);
+                        cmds_[motor.cmd_packet_idx] = static_cast<int16_t>(motor.speed_pid.calculate(
+                            motor.report.rpm.get(),
+                            motor.command.cmd.get()));
                         break;
                     }
                     case CtrlMode::SINGLE_ROUND_POSITION: {
-                        big_endian::write_int16(
-                            static_cast<int16_t>(motor.speed_pid.calculate(
-                                motor.report.rpm.get(),
-                                -motor.speed_pid.calculate(
-                                    0,
-                                    calculate_err(
-                                        motor.report.ecd.get(),
-                                        motor.command.cmd.get())
-                                )
-                            )),
-                            shared_tx_buf_, &index);
+                        cmds_[motor.cmd_packet_idx] = static_cast<int16_t>(motor.speed_pid.calculate(
+                            motor.report.rpm.get(),
+                            -motor.speed_pid.calculate(
+                                0,
+                                calculate_err(
+                                    motor.report.ecd.get(),
+                                    motor.command.cmd.get())
+                            )
+                        ));
                         break;
                     }
                 }
-            } else {
-                big_endian::write_uint16(0, shared_tx_buf_, &index);
             }
+        }
+
+        int index = 0;
+        for (const int16_t cmd : cmds_) {
+            big_endian::write_int16(cmd, shared_tx_buf_, &index);
         }
 
         send_packet();
