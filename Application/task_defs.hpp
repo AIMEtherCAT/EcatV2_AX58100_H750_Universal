@@ -508,6 +508,10 @@ namespace aim::ecat::task {
 
         private:
             ThreadSafeBuffer buf_{21};
+
+            uint32_t packet1_id_{};
+            uint32_t packet2_id_{};
+            uint32_t packet3_id_{};
         };
     }
 

@@ -6,32 +6,46 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::hipnuc_imu {
-    HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer */* buffer */) : CanRunnable(false) {
+    HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer *buffer) : CanRunnable(false) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
-
         can_id_type_ = FDCAN_STANDARD_ID;
-        can_inst_ = &hfdcan2;
-    }
 
-    void HIPNUC_IMU_CAN::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {
-        uint8_t current_buf[21] = {};
-        buf_.read(current_buf, 21);
-        switch (rx_header->Identifier) {
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
-                memcpy(current_buf, rx_data, 8);
+                can_inst_ = &hfdcan1;
                 break;
             }
             case 0x02: {
-                memcpy(current_buf + 8, rx_data, 8);
-                break;
-            }
-            case 0x03: {
-                memcpy(current_buf + 8 + 8, rx_data, 5);
+                can_inst_ = &hfdcan2;
                 break;
             }
             default: {
             }
         }
+
+        packet1_id_ = buffer->read_uint32(buffer::EndianType::LITTLE);
+        packet2_id_ = buffer->read_uint32(buffer::EndianType::LITTLE);
+        packet3_id_ = buffer->read_uint32(buffer::EndianType::LITTLE);
+    }
+
+    void HIPNUC_IMU_CAN::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {
+        if (rx_header->Identifier != packet1_id_
+            && rx_header->Identifier != packet2_id_
+            && rx_header->Identifier != packet3_id_) {
+            return;
+        }
+
+        uint8_t current_buf[21] = {};
+        buf_.read(current_buf, 21);
+
+        if (packet1_id_ == rx_header->Identifier) {
+            memcpy(current_buf, rx_data, 8);
+        } else if (packet2_id_ == rx_header->Identifier) {
+            memcpy(current_buf + 8, rx_data, 8);
+        } else if (packet3_id_ == rx_header->Identifier) { // NOLINT
+            memcpy(current_buf + 8 + 8, rx_data, 5);
+        }
+
         buf_.write(current_buf, 21);
     }
 
