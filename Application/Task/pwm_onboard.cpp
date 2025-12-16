@@ -12,16 +12,16 @@ namespace aim::ecat::task::pwm {
         uint32_t tim_freq = 0;
 
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
+            case 1: {
+                tim_inst_ = &htim3;
+                init_peripheral(peripheral::Type::PERIPHERAL_TIM3);
+                tim_freq = TIM3_FREQ;
+                break;
+            }
             case 2: {
                 tim_inst_ = &htim2;
                 init_peripheral(peripheral::Type::PERIPHERAL_TIM2);
                 tim_freq = TIM2_FREQ;
-                break;
-            }
-            case 3: {
-                tim_inst_ = &htim3;
-                init_peripheral(peripheral::Type::PERIPHERAL_TIM3);
-                tim_freq = TIM3_FREQ;
                 break;
             }
             default: {
