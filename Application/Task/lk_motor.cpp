@@ -71,7 +71,14 @@ namespace aim::ecat::task::lk_motor {
     }
 
     void LK_MOTOR::write_to_master(buffer::Buffer *slave_to_master_buf) {
-        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, is_online());
+        // bit 0 online?
+        // bit 1 querying state?
+        // bit 2 enabled?
+        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE,
+                                         (is_online() ? 1 : 0)
+                                         | (state_.get() == State::QUERYING_STATE ? 1 : 0) << 1
+                                         | (state_.get() == State::ENABLED ? 1 : 0) << 2
+        );
         slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, report_.current.get());
         slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, report_.speed.get());
         slave_to_master_buf->write_uint16(buffer::EndianType::LITTLE, report_.ecd.get());
