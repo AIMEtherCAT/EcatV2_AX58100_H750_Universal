@@ -4,7 +4,9 @@
 
 **ESC**: AX58100
 
-**Support Tasks**:
+**Support Tasks (Tested)**:
+
+They're tested by various test cases, and should be working fine.
 
 * RC
     * DBUS
@@ -15,11 +17,20 @@
     * DJI
     * DSHOT
     * PWM (Onboard 4x2 channel)
+* SENSOR
+    * HIPNUC IMU (CAN)
+
+**Untested Tasks**:
+
+They're probably not working or are not working properly.
+
+Testing is in progress and will be updated.
+
+* ACTUATOR
     * PWM (External 4x4 channel)
 * SENSOR
-    * HIPNUC IMU (CAN2)
-    * MS5837 PRESSURE SENSOR (I2C)
-    * PMU (CAN2, UAVCAN PROTOCOL ONLY)
+  * MS5837 PRESSURE SENSOR (I2C)
+  * PMU (CAN2, UAVCAN PROTOCOL ONLY)
 
 ![img.png](docs/img.png)
 
