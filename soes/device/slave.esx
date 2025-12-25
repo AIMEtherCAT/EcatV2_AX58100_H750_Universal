@@ -998,7 +998,7 @@
       <Access>RW</Access>
       <Name>CycleTime</Name>
       <Type>UNSIGNED32</Type>
-      <DefaultValue>30000</DefaultValue>
+      <DefaultValue>150000</DefaultValue>
       <PdoMapping>NONE</PdoMapping>
     </Member>
     <Member>
@@ -1013,7 +1013,7 @@
       <Access>RW</Access>
       <Name>Minimum Cycle Time</Name>
       <Type>UNSIGNED32</Type>
-      <DefaultValue>7000</DefaultValue>
+      <DefaultValue>135000</DefaultValue>
       <PdoMapping>NONE</PdoMapping>
     </Member>
     <Member>
@@ -1041,7 +1041,7 @@
       <Access>RW</Access>
       <Name>CycleTime</Name>
       <Type>UNSIGNED32</Type>
-      <DefaultValue>30000</DefaultValue>
+      <DefaultValue>150000</DefaultValue>
       <PdoMapping>NONE</PdoMapping>
     </Member>
     <Member>
@@ -1056,7 +1056,7 @@
       <Access>RW</Access>
       <Name>Minimum Cycle Time</Name>
       <Type>UNSIGNED32</Type>
-      <DefaultValue>7000</DefaultValue>
+      <DefaultValue>135000</DefaultValue>
       <PdoMapping>NONE</PdoMapping>
     </Member>
     <Member>

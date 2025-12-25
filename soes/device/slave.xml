@@ -1146,7 +1146,7 @@
                   <SubItem>
                     <Name>CycleTime</Name>
                     <Info>
-                      <DefaultValue>30000</DefaultValue>
+                      <DefaultValue>150000</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -1158,7 +1158,7 @@
                   <SubItem>
                     <Name>Minimum Cycle Time</Name>
                     <Info>
-                      <DefaultValue>7000</DefaultValue>
+                      <DefaultValue>135000</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -1194,7 +1194,7 @@
                   <SubItem>
                     <Name>CycleTime</Name>
                     <Info>
-                      <DefaultValue>30000</DefaultValue>
+                      <DefaultValue>150000</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
@@ -1206,7 +1206,7 @@
                   <SubItem>
                     <Name>Minimum Cycle Time</Name>
                     <Info>
-                      <DefaultValue>7000</DefaultValue>
+                      <DefaultValue>135000</DefaultValue>
                     </Info>
                   </SubItem>
                   <SubItem>
