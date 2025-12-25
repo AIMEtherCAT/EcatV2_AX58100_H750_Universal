@@ -230,7 +230,3 @@ void cb_get_inputs() {
 void cb_set_outputs() {
     cb_set_outputs_impl();
 }
-
-void HAL_GPIO_EXTI_Callback(uint16_t /* GPIO_Pin */) {
-    pdi_irq_flag = 1;
-}
