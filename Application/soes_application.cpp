@@ -25,7 +25,7 @@ esc_cfg_t config = {
     // NOLINTNEXTLINE(*-non-const-parameter)
     .pre_state_change_hook = [](uint8_t *as, uint8_t * /* an */) {
         if (const uint8_t target = *as >> 4 & 0x0F; target == ESCinit) {
-            aim::ecat::application::do_terminate();
+            HAL_NVIC_SystemReset();
         }
     },
     .post_state_change_hook = nullptr,
@@ -91,6 +91,10 @@ namespace aim::ecat::application {
         buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->reset();
     }
 
+    // currently deprecated
+    // i cant figure out why it sometimes stuck and cannot terminate correctly
+    // so this func is now replaced by HAL_NVIC_SystemReset();
+    // it works :)
     void do_terminate() {
         uint32_t thread_count = 0;
         for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
@@ -102,6 +106,10 @@ namespace aim::ecat::application {
 
         while (task::get_terminated_counter()->get() != thread_count) {
             vTaskDelay(1);
+        }
+
+        for (const std::shared_ptr<task::runnable_conf> &conf: *task::get_run_confs()) {
+            conf->runnable->exit();
         }
 
         init_soes_env();
@@ -221,4 +229,8 @@ void cb_get_inputs() {
 
 void cb_set_outputs() {
     cb_set_outputs_impl();
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t /* GPIO_Pin */) {
+    pdi_irq_flag = 1;
 }

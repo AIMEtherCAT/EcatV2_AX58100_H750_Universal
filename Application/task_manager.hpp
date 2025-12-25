@@ -12,6 +12,7 @@ namespace aim::ecat::task {
     struct runnable_conf {
         std::unique_ptr<CustomRunnable> runnable{nullptr};
         osThreadDef_t thread_def{};
+        osThreadId thread_id{};
 
         ThreadSafeFlag is_can_task{};
         ThreadSafeFlag is_uart_task{};

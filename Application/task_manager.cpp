@@ -59,7 +59,6 @@ namespace aim::ecat::task {
             vTaskDelay(conf_inst->runnable->period);
         }
 
-        conf_inst->runnable->exit();
         terminated_counter.increment();
     }
 
@@ -166,7 +165,7 @@ namespace aim::ecat::task {
                     .buffer = nullptr,
                     .controlblock = nullptr
                 };
-                osThreadCreate(&conf->thread_def, conf.get());
+                conf->thread_id = osThreadCreate(&conf->thread_def, conf.get());
             }
         }
     }
