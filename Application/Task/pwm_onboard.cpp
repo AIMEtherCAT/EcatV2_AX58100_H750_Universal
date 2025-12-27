@@ -10,6 +10,18 @@
 namespace aim::ecat::task::pwm {
     PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false) {
         uint32_t tim_freq = 0;
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
+            case 0x01: {
+                connection_lost_action_ = ConnectionLostAction::KEEP_LAST;
+                break;
+            }
+            case 0x02: {
+                connection_lost_action_ = ConnectionLostAction::RESET_TO_DEFAULT;
+                break;
+            }
+            default: {
+            }
+        }
 
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 1: {
@@ -48,11 +60,11 @@ namespace aim::ecat::task::pwm {
             }
         }
 
-        const uint16_t init_value = buffer->read_uint16(buffer::EndianType::LITTLE);
-        command_.channel1 = calculate_compare(init_value);
-        command_.channel2 = calculate_compare(init_value);
-        command_.channel3 = calculate_compare(init_value);
-        command_.channel4 = calculate_compare(init_value);
+        init_value_ = buffer->read_uint16(buffer::EndianType::LITTLE);
+        command_.channel1 = calculate_compare(init_value_);
+        command_.channel2 = calculate_compare(init_value_);
+        command_.channel3 = calculate_compare(init_value_);
+        command_.channel4 = calculate_compare(init_value_);
 
         __HAL_TIM_SET_PRESCALER(tim_inst_, setting_pair_.psc);
         __HAL_TIM_SET_AUTORELOAD(tim_inst_, setting_pair_.arr);
@@ -65,11 +77,35 @@ namespace aim::ecat::task::pwm {
     }
 
     void PWM_ONBOARD::read_from_master(buffer::Buffer *master_to_slave_buf) {
-        command_.channel1 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
-        command_.channel2 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
-        command_.channel3 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
-        command_.channel4 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+        if (in_protection_.get()) {
+            command_.channel1 = calculate_compare(init_value_);
+            command_.channel2 = calculate_compare(init_value_);
+            command_.channel3 = calculate_compare(init_value_);
+            command_.channel4 = calculate_compare(init_value_);
+        } else {
+            command_.channel1 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+            command_.channel2 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+            command_.channel3 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+            command_.channel4 = calculate_compare(master_to_slave_buf->read_uint16(buffer::EndianType::LITTLE));
+        }
 
         send_signal();
+    }
+
+    void PWM_ONBOARD::on_connection_lost() {
+        if (connection_lost_action_ == ConnectionLostAction::RESET_TO_DEFAULT) {
+            in_protection_.set();
+
+            command_.channel1 = calculate_compare(init_value_);
+            command_.channel2 = calculate_compare(init_value_);
+            command_.channel3 = calculate_compare(init_value_);
+            command_.channel4 = calculate_compare(init_value_);
+        }
+
+        send_signal();
+    }
+
+    void PWM_ONBOARD::on_connection_recover() {
+        in_protection_.clear();
     }
 }

@@ -9,6 +9,19 @@ namespace aim::ecat::task::lk_motor {
     LK_MOTOR::LK_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
+            case 0x01: {
+                connection_lost_action_ = ConnectionLostAction::KEEP_LAST;
+                break;
+            }
+            case 0x02: {
+                connection_lost_action_ = ConnectionLostAction::RESET_TO_DEFAULT;
+                break;
+            }
+            default: {
+            }
+        }
+
         period = buffer->read_uint16(buffer::EndianType::LITTLE);
 
         packet_id_ = buffer->read_uint32(buffer::EndianType::LITTLE);
@@ -83,6 +96,12 @@ namespace aim::ecat::task::lk_motor {
         slave_to_master_buf->write_int16(buffer::EndianType::LITTLE, report_.speed.get());
         slave_to_master_buf->write_uint16(buffer::EndianType::LITTLE, report_.ecd.get());
         slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, report_.temperature.get());
+    }
+
+    void LK_MOTOR::on_connection_lost() {
+        if (connection_lost_action_ == ConnectionLostAction::RESET_TO_DEFAULT) {
+            command_.is_enable.set(0);
+        }
     }
 
     void LK_MOTOR::read_from_master(buffer::Buffer *master_to_slave_buf) {

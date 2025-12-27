@@ -41,34 +41,28 @@
 #define ESCREG_SYNC0_CYCLE_TIME    0x09A0
 #define ESCREG_SYNC_START_TIME     0x0990
 
-
-static int et1100 = -1;
 static uint8_t read_termination[MAX_READ_SIZE] = {0};
 
 extern SPI_HandleTypeDef hspi4;
 
-void spi_unselect(int chip) {
+void spi_unselect(void) {
     HAL_GPIO_WritePin(ETHERCAT_NS_GPIO_Port, ETHERCAT_NS_Pin, GPIO_PIN_SET);
 }
 
-void spi_select(int chip) {
+void spi_select(void) {
     HAL_GPIO_WritePin(ETHERCAT_NS_GPIO_Port, ETHERCAT_NS_Pin, GPIO_PIN_RESET);
 }
 
-#define GPIO_ECAT_RESET    1 /* specific function to hold ESC reset on startup
-                              * when emulating EEPROM
-                              */
-
-static void esc_address(uint16_t address, uint8_t command) {
+static void esc_address(const uint16_t address, const uint8_t command) {
     /* Device is selected already.
      * We use 2 bytes addressing.
      */
     uint8_t data[2];
 
     /* address 12:5 */
-    data[0] = (address >> 5);
+    data[0] = address >> 5;
     /* address 4:0 and cmd 2:0 */
-    data[1] = ((address & 0x1F) << 3) | command;
+    data[1] = (address & 0x1F) << 3 | command;
 
     /* Write (and read AL interrupt register) */
     HAL_SPI_TransmitReceive(&hspi4, data, (uint8_t *) &ESCvar.ALevent, sizeof(data), 1000);
@@ -81,11 +75,11 @@ static void esc_address(uint16_t address, uint8_t command) {
  * @param[out]  buf         = pointer to buffer to read in
  * @param[in]   len         = number of bytes to read
  */
-void ESC_read(uint16_t address, void *buf, uint16_t len) {
+void ESC_read(const uint16_t address, void *buf, const uint16_t len) {
     if (len > MAX_READ_SIZE) { return; }
 
     /* Select device. */
-    spi_select(et1100);
+    spi_select();
 
     /* Write address and command to device. */
     esc_address(address, ESC_CMD_READ);
@@ -98,7 +92,7 @@ void ESC_read(uint16_t address, void *buf, uint16_t len) {
                                     (MAX_READ_SIZE - len), buf, len, 0xffff);
 
     /* Un-select device. */
-    spi_unselect(et1100);
+    spi_unselect();
 }
 
 /** ESC write function used by the Slave stack.
@@ -107,31 +101,20 @@ void ESC_read(uint16_t address, void *buf, uint16_t len) {
  * @param[out]  buf         = pointer to buffer to write from
  * @param[in]   len         = number of bytes to write
  */
-void ESC_write(uint16_t address, void *buf, uint16_t len) {
+void ESC_write(const uint16_t address, const void *buf, const uint16_t len) {
     /* Select device. */
-    spi_select(et1100);
+    spi_select();
     /* Write address and command to device. */
     esc_address(address, ESC_CMD_WRITE);
     /* Write data. */
     HAL_SPI_Transmit(&hspi4, buf, len, 0xffff);
 
     /* Un-select device. */
-    spi_unselect(et1100);
+    spi_unselect();
 }
 
 
-void ESC_init(const esc_cfg_t *config) {
+void ESC_init(const esc_cfg_t *cfg) {
+    UNUSED(cfg);
     read_termination[MAX_READ_SIZE - 1] = 0xFF;
-
-    // uint8_t device_symbol = 0;
-    // while (device_symbol == 0)
-    // {
-    //    ESC_read(et1100, (void *)&device_symbol, sizeof(uint8_t));
-    //    if ((device_symbol != 0) || (device_symbol != 0xFF))
-    //    {
-    //       DPRINT("ESC init successful");
-    //    }
-    // }
-    // task_delay(1000); // allow ESC to load EEPROM, or if EEP_DONE can be read
-    // then wait while EEP_DONE is low.
 }

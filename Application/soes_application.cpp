@@ -16,8 +16,7 @@ extern "C" {
 _Objects Obj;
 esc_cfg_t config = {
     .user_arg = nullptr,
-    // use free-run currently
-    .use_interrupt = 0,
+    .use_interrupt = 1,
     .watchdog_cnt = INT32_MAX,
     .skip_default_initialization = false,
     .set_defaults_hook = nullptr,
@@ -58,9 +57,17 @@ namespace aim::ecat::application {
     using namespace io;
 
     uint16_t arg_recv_idx = 0;
-    ThreadSafeFlag is_task_loaded;
-    ThreadSafeFlag is_task_ready_to_load;
-    ThreadSafeFlag is_slave_ready;
+    ThreadSafeFlag is_task_loaded{};
+    ThreadSafeFlag is_task_ready_to_load{};
+    ThreadSafeFlag is_slave_ready{};
+    ThreadSafeFlag pdi_called{};
+
+    ThreadSafeValue<uint8_t> last_frame_idx{};
+    ThreadSafeTimestamp last_master_packet_received{};
+
+    ThreadSafeTimestamp *get_last_master_packet_received() {
+        return &last_master_packet_received;
+    }
 
     ThreadSafeFlag *get_is_task_loaded() {
         return &is_task_loaded;
@@ -118,7 +125,7 @@ namespace aim::ecat::application {
         task::get_run_confs()->clear();
     }
 
-    void cb_get_inputs_impl() {
+    void cb_set_outputs_impl() {
         buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->reset();
         buffer::get_buffer(buffer::Type::ECAT_MASTER_TO_SLAVE)->raw_write(
             reinterpret_cast<uint8_t *>(Obj.master2slave), 80);
@@ -165,7 +172,7 @@ namespace aim::ecat::application {
         }
     }
 
-    void cb_set_outputs_impl() {
+    void cb_get_inputs_impl() {
         // no any packet received yet
         if (Obj.master_status == MASTER_UNKNOWN) {
             return;
@@ -198,20 +205,28 @@ namespace aim::ecat::application {
             // this flag is for round-trip latency calculation
             // master -> slave -> master
             Obj.slave_status = Obj.master_status;
+            if (Obj.master_status != last_frame_idx.get()) {
+                last_frame_idx.set(Obj.master_status);
+                last_master_packet_received.set_current();
+            }
         }
 
         buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->raw_read(
             reinterpret_cast<uint8_t *>(Obj.slave2master), 80);
     }
 
-    // use free-run currently, no irq required
-    // void HAL_GPIO_EXTI_Callback(uint16_t /* GPIO_Pin */) {
-    //     pdi_irq_flag = 1;
-    // }
-
     [[noreturn]] void soes_application_impl() {
         while (true) {
+            // I don't actually know why
+            // but if I add this duplicated free-run func here
+            // the overall latency will decrease
+            // ???????
             ecat_slv();
+            if (pdi_called.get()) {
+                DIG_process(DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG |
+                            DIG_PROCESS_INPUTS_FLAG);
+                pdi_called.clear();
+            }
         }
     }
 }
@@ -229,4 +244,9 @@ void cb_get_inputs() {
 
 void cb_set_outputs() {
     cb_set_outputs_impl();
+}
+
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+    UNUSED(GPIO_Pin);
+    pdi_called.set();
 }

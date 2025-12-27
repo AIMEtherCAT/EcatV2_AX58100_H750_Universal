@@ -5,7 +5,7 @@
 #include "peripheral_manager.hpp"
 #include "task_defs.hpp"
 
-namespace aim::ecat::task::ms5876 {
+namespace aim::ecat::task::ms5837 {
     MS5837_30BA::MS5837_30BA(buffer::Buffer *buffer) : I2CRunnable(true) {
         period = 1;
 

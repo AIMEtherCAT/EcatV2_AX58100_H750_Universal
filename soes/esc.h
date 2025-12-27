@@ -733,7 +733,7 @@ void ESC_sm_act_event (void);
 
 /* From hardware file */
 void ESC_read (uint16_t address, void *buf, uint16_t len);
-void ESC_write (uint16_t address, void *buf, uint16_t len);
+void ESC_write (uint16_t address, const void *buf, uint16_t len);
 void ESC_init (const esc_cfg_t * cfg);
 void ESC_reset (void);
 

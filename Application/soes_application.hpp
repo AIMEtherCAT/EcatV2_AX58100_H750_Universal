@@ -18,6 +18,8 @@ namespace aim::ecat::application {
 
     ThreadSafeFlag *get_is_slave_ready();
 
+    ThreadSafeTimestamp *get_last_master_packet_received();
+
     constexpr uint8_t SLAVE_INITIALIZING = 1;
     constexpr uint8_t SLAVE_READY = 2;
     constexpr uint8_t SLAVE_CONFIRM_READY = 3;

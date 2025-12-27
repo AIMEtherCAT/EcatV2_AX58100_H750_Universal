@@ -169,4 +169,10 @@ void dshot_dma_tc_callback(DMA_HandleTypeDef *hdma) {
     } else if (hdma == htim->hdma[TIM_DMA_ID_CC4]) {
         __HAL_TIM_DISABLE_DMA(htim, TIM_DMA_CC4);
     }
+
+    for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
+        if (conf->runnable->task_type == TaskType::DSHOT) {
+            static_cast<pwm::DSHOT600 *>(conf->runnable.get())->on_packet_sent(); // NOLINT
+        }
+    }
 }

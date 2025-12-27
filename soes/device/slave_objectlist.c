@@ -189,18 +189,18 @@ const _objd SDO1C32[] =
 {
   {0x00, DTYPE_UNSIGNED8, 8, ATYPE_RO, acName1C32_00, 12, NULL},
   {0x01, DTYPE_UNSIGNED16, 16, ATYPE_RW, acName1C32_01, 0x01, &Obj.SyncMgrParam1.Sync_mode},
-  {0x02, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C32_02, 30000, &Obj.SyncMgrParam1.CycleTime},
+  {0x02, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C32_02, 150000, &Obj.SyncMgrParam1.CycleTime},
   {0x04, DTYPE_UNSIGNED16, 16, ATYPE_RO, acName1C32_04, 0x4000, &Obj.SyncMgrParam1.Sync_modes_supported},
-  {0x05, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C32_05, 7000, &Obj.SyncMgrParam1.Minimum_Cycle_Time},
+  {0x05, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C32_05, 135000, &Obj.SyncMgrParam1.Minimum_Cycle_Time},
   {0x0C, DTYPE_UNSIGNED16, 16, ATYPE_RO, acName1C32_0C, 0, &Obj.SyncMgrParam1.CycleTimeTooSmallCnt},
 };
 const _objd SDO1C33[] =
 {
   {0x00, DTYPE_UNSIGNED8, 8, ATYPE_RO, acName1C33_00, 12, NULL},
   {0x01, DTYPE_UNSIGNED16, 16, ATYPE_RW, acName1C33_01, 0x22, &Obj.SyncMgrParam2.Sync_mode},
-  {0x02, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C33_02, 30000, &Obj.SyncMgrParam2.CycleTime},
+  {0x02, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C33_02, 150000, &Obj.SyncMgrParam2.CycleTime},
   {0x04, DTYPE_UNSIGNED16, 16, ATYPE_RO, acName1C33_04, 0x4000, &Obj.SyncMgrParam2.Sync_modes_supported},
-  {0x05, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C33_05, 7000, &Obj.SyncMgrParam2.Minimum_Cycle_Time},
+  {0x05, DTYPE_UNSIGNED32, 32, ATYPE_RW, acName1C33_05, 135000, &Obj.SyncMgrParam2.Minimum_Cycle_Time},
   {0x0C, DTYPE_UNSIGNED16, 16, ATYPE_RO, acName1C33_0C, 0, &Obj.SyncMgrParam2.CycleTimeTooSmallCnt},
 };
 const _objd SDO6000[] =

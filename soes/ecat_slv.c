@@ -227,10 +227,6 @@ void DIG_process (uint8_t flags)
          /* Set outputs */
          cb_set_outputs();
       }
-      else if (ESCvar.ALevent & ESCREG_ALEVENT_SM2)
-      {
-         ESC_read (ESC_SM2_sma, rxpdo, ESCvar.ESC_SM2_sml);
-      }
    }
 
    /* Call application */
