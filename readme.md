@@ -10,7 +10,7 @@ control for various robotics peripherals.
 * **ESC**: AX58100
 * **Communication Interface**: EtherCAT (SPI to ESC)
 
-![img.png](docs/img.png)
+![board-img.png](docs/board-img.png)
 
 ## Features
 

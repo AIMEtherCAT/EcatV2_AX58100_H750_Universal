@@ -226,9 +226,7 @@ namespace aim::ecat::application {
                 DIG_process(DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG |
                             DIG_PROCESS_INPUTS_FLAG);
                 pdi_called.clear();
-                continue;
             }
-            DIG_process(DIG_PROCESS_WD_FLAG);
         }
     }
 }
