@@ -38,6 +38,11 @@ namespace aim::ecat::task {
         DM_MOTOR = 12
     };
 
+    enum class ConnectionLostAction : uint8_t {
+        KEEP_LAST = 0x01,
+        RESET_TO_DEFAULT = 0x02
+    };
+
     class CustomRunnable {
     public:
         explicit CustomRunnable(const bool is_run_task_enabled) : is_run_task_enabled_(is_run_task_enabled) {
@@ -55,6 +60,12 @@ namespace aim::ecat::task {
         bool is_run_task_enabled_{false};
 
         virtual void run_task() {
+        }
+
+        virtual void on_connection_lost() {
+        }
+
+        virtual void on_connection_recover() {
         }
 
         virtual void write_to_master(buffer::Buffer *slave_to_master_buf) {
@@ -158,7 +169,7 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace ms5876 {
+    namespace ms5837 {
         constexpr uint8_t D1_OSR256_CMD = 0x40;
         constexpr uint8_t D1_OSR512_CMD = 0x42;
         constexpr uint8_t D1_OSR1024_CMD = 0x44;
@@ -349,11 +360,15 @@ namespace aim::ecat::task {
 
             void run_task() override;
 
+            void on_connection_lost() override;
+
         private:
             // motor to ctrl
             uint32_t master_id_{};
             // ctrl to motor
             uint32_t can_id_{};
+
+            ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
 
             ThreadSafeBuffer report_{8};
             ThreadSafeTimestamp last_receive_time{};
@@ -494,7 +509,10 @@ namespace aim::ecat::task {
 
             void run_task() override;
 
+            void on_connection_lost() override;
+
         private:
+            ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
             Motor motors_[4]{};
             int16_t cmds_[4]{};
         };
@@ -609,11 +627,20 @@ namespace aim::ecat::task {
 
             void read_from_master(buffer::Buffer *master_to_slave_buf) override;
 
+            void on_connection_lost() override;
+
+            void on_connection_recover() override;
+
         private:
+            ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
+
             TIM_HandleTypeDef *tim_inst_{nullptr};
             ControlCommand command_{};
             TIMSettingPair setting_pair_{};
             uint16_t expected_period_{};
+            uint16_t init_value_{};
+
+            ThreadSafeFlag in_protection_{false};
 
             [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const {
                 return static_cast<uint32_t>(lround(
@@ -734,13 +761,24 @@ namespace aim::ecat::task {
 
             void exit() override;
 
+            void on_packet_sent() const;
+
+            void on_connection_lost() override;
+
+            void on_connection_recover() override;
+
         private:
+            ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
+
             TIM_HandleTypeDef *tim_inst_{nullptr};
             ControlCommand command_{};
             uint32_t *motor1_buffer{};
             uint32_t *motor2_buffer{};
             uint32_t *motor3_buffer{};
             uint32_t *motor4_buffer{};
+            uint16_t init_value_{};
+
+            ThreadSafeFlag in_protection_{false};
 
             void init_dshot_dma(const uint32_t tim_freq) const {
                 const uint16_t dshot_psc = lrintf(static_cast<float>(tim_freq) / DSHOT600_FREQ + 0.01f) - 1;
@@ -831,12 +869,16 @@ namespace aim::ecat::task {
 
             void run_task() override;
 
+            void on_connection_lost() override;
+
         private:
             MotorReport report_{};
             CtrlMode mode_{};
             ThreadSafeValue<State> state_{State::DISABLED};
             ControlCommand command_{};
             uint32_t packet_id_{};
+
+            ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
 
             [[nodiscard]] bool is_online() const {
                 return HAL_GetTick() - report_.last_receive_time.get() <= 50;

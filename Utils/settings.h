@@ -5,6 +5,11 @@
 #ifndef ECATV2_AX58100_H750_UNIVERSAL_SETTINGS_H
 #define ECATV2_AX58100_H750_UNIVERSAL_SETTINGS_H
 
-#define SW_REV "005"
+#define SW_REV "006"
+
+// If no packet is received from the master within this time,
+// treat the connection as lost
+// unit: ms
+#define MASTER_LOST_THRESHOLD 25
 
 #endif //ECATV2_AX58100_H750_UNIVERSAL_SETTINGS_H

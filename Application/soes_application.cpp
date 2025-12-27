@@ -57,10 +57,17 @@ namespace aim::ecat::application {
     using namespace io;
 
     uint16_t arg_recv_idx = 0;
-    ThreadSafeFlag is_task_loaded;
-    ThreadSafeFlag is_task_ready_to_load;
-    ThreadSafeFlag is_slave_ready;
-    ThreadSafeFlag pdi_called;
+    ThreadSafeFlag is_task_loaded{};
+    ThreadSafeFlag is_task_ready_to_load{};
+    ThreadSafeFlag is_slave_ready{};
+    ThreadSafeFlag pdi_called{};
+
+    ThreadSafeValue<uint8_t> last_frame_idx{};
+    ThreadSafeTimestamp last_master_packet_received{};
+
+    ThreadSafeTimestamp *get_last_master_packet_received() {
+        return &last_master_packet_received;
+    }
 
     ThreadSafeFlag *get_is_task_loaded() {
         return &is_task_loaded;
@@ -198,6 +205,10 @@ namespace aim::ecat::application {
             // this flag is for round-trip latency calculation
             // master -> slave -> master
             Obj.slave_status = Obj.master_status;
+            if (Obj.master_status != last_frame_idx.get()) {
+                last_frame_idx.set(Obj.master_status);
+                last_master_packet_received.set_current();
+            }
         }
 
         buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->raw_read(

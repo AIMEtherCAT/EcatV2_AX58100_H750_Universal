@@ -9,6 +9,19 @@ namespace aim::ecat::task::dm_motor {
     DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
+        switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
+            case 0x01: {
+                connection_lost_action_ = ConnectionLostAction::KEEP_LAST;
+                break;
+            }
+            case 0x02: {
+                connection_lost_action_ = ConnectionLostAction::RESET_TO_DEFAULT;
+                break;
+            }
+            default: {
+            }
+        }
+
         period = buffer->read_uint16(buffer::EndianType::LITTLE);
 
         can_id_ = buffer->read_uint16(buffer::EndianType::LITTLE);
@@ -87,6 +100,12 @@ namespace aim::ecat::task::dm_motor {
             }
         }
         cmd_.cmd.write(cmd_buf, 8);
+    }
+
+    void DM_MOTOR::on_connection_lost() {
+        if (connection_lost_action_ == ConnectionLostAction::RESET_TO_DEFAULT) {
+            cmd_.is_enable.set(0);
+        }
     }
 
     void DM_MOTOR::can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) {

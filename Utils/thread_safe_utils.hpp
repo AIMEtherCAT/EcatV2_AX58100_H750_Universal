@@ -122,8 +122,8 @@ namespace aim::utils::thread_safety {
         }
 
         ~ThreadSafeBuffer() {
-            delete buf1_;
-            delete buf2_;
+            delete[] buf1_;
+            delete[] buf2_;
         }
 
         ThreadSafeBuffer(const ThreadSafeBuffer &) = delete;

@@ -8,6 +8,7 @@
 #include "peripheral_manager.hpp"
 #include "task_defs.hpp"
 #include "c_task_warpper.h"
+#include "settings.h"
 #include "soes_application.hpp"
 
 extern "C" {
@@ -21,9 +22,9 @@ void task_thread_func(void const *argument) {
 }
 
 namespace aim::ecat::task {
-    osMutexId runConfMutexHandle;
+    osMutexId runConfMutexHandle{};
 
-    ThreadSafeCounter terminated_counter;
+    ThreadSafeCounter terminated_counter{};
 
     ThreadSafeCounter *get_terminated_counter() {
         return &terminated_counter;
@@ -118,7 +119,7 @@ namespace aim::ecat::task {
                 }
                 case static_cast<uint8_t>(TaskType::MS5876_30BA): {
                     conf->is_i2c_task.set();
-                    conf->runnable = std::make_unique<ms5876::MS5837_30BA>(
+                    conf->runnable = std::make_unique<ms5837::MS5837_30BA>(
                         buffer::get_buffer(buffer::Type::ECAT_ARGS)
                     );
                     break;
@@ -170,11 +171,26 @@ namespace aim::ecat::task {
         }
     }
 
-    static ThreadSafeFlag last_slave_ready_flag;
+    static void notify_connection_lost() {
+        for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
+            conf->runnable->on_connection_lost();
+        }
+    }
+
+    static void notify_connection_recover() {
+        for (const std::shared_ptr<runnable_conf> &conf: run_confs) {
+            conf->runnable->on_connection_recover();
+        }
+    }
+
+    static ThreadSafeFlag last_slave_ready_flag{false};
+    static ThreadSafeFlag last_connected_status_flag{true};
 
     [[noreturn]] void task_manager_impl() {
         while (true) {
-            if (application::get_is_task_loaded()->get()) {
+            // turn on iff task loaded & connected
+            if (application::get_is_task_loaded()->get()
+                && last_connected_status_flag.get()) {
                 HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_RESET);
             } else {
                 HAL_GPIO_WritePin(LED_LBOARD_2_GPIO_Port, LED_LBOARD_2_Pin, GPIO_PIN_SET);
@@ -196,6 +212,23 @@ namespace aim::ecat::task {
                 load_task();
                 application::get_is_task_ready_to_load()->clear();
                 application::get_is_task_loaded()->set();
+            }
+
+
+            if (application::get_is_slave_ready()->get()) {
+                // current connected, last not connected
+                if (HAL_GetTick() - application::get_last_master_packet_received()->get() <= MASTER_LOST_THRESHOLD
+                    && !last_connected_status_flag.get()) {
+                    notify_connection_recover();
+                    // change to connected
+                    last_connected_status_flag.set();
+                } else if (HAL_GetTick() - application::get_last_master_packet_received()->get() > MASTER_LOST_THRESHOLD
+                           && last_connected_status_flag.get()) {
+                    // current disconnected, last connected
+                    notify_connection_lost();
+                    // change to disconnected
+                    last_connected_status_flag.clear();
+                }
             }
 
             vTaskDelay(10);
