@@ -1,5 +1,7 @@
 ## AIM EtherCAT - Custom Slave Control Board
 
+[![Build Firmware](https://github.com/AIMEtherCAT/EcatV2_AX58100_H750_Universal/actions/workflows/build.yml/badge.svg?branch=main)](https://github.com/AIMEtherCAT/EcatV2_AX58100_H750_Universal/actions/workflows/build.yml)
+
 This project is a custom EtherCAT Slave implementation running on an **STM32H750** microcontroller with an **AX58100**
 EtherCAT Slave Controller (ESC). It leverages the **SOES** (Simple Open EtherCAT Slave) stack to provide real-time
 control for various robotics peripherals.
