@@ -13,6 +13,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Checkout SOES
+        run: git submodule update --recursive --remote
+
       - name: Install dependencies
         run: |
           sudo apt-get update

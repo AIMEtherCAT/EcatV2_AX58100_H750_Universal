@@ -1,0 +1,6 @@
+[submodule "soes/soes"]
+	path = soes/soes
+	url = https://github.com/OpenEtherCATsociety/SOES.git
+[submodule "ecat/soes"]
+	path = ecat/soes
+	url = https://github.com/OpenEtherCATsociety/SOES.git

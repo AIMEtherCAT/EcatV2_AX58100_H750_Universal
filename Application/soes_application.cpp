@@ -19,7 +19,9 @@ esc_cfg_t config = {
     .use_interrupt = 1,
     .watchdog_cnt = INT32_MAX,
     .skip_default_initialization = false,
-    .set_defaults_hook = nullptr,
+    .set_defaults_hook = [] {
+        Obj.serial = HAL_GetUIDw0();
+    },
     // ReSharper disable once CppParameterMayBeConstPtrOrRef
     // NOLINTNEXTLINE(*-non-const-parameter)
     .pre_state_change_hook = [](uint8_t *as, uint8_t * /* an */) {
@@ -217,16 +219,7 @@ namespace aim::ecat::application {
 
     [[noreturn]] void soes_application_impl() {
         while (true) {
-            // I don't actually know why
-            // but if I add this duplicated free-run func here
-            // the overall latency will decrease
-            // ???????
             ecat_slv();
-            if (pdi_called.get()) {
-                DIG_process(DIG_PROCESS_OUTPUTS_FLAG | DIG_PROCESS_APP_HOOK_FLAG |
-                            DIG_PROCESS_INPUTS_FLAG);
-                pdi_called.clear();
-            }
         }
     }
 }

@@ -101,7 +101,7 @@ void ESC_read(const uint16_t address, void *buf, const uint16_t len) {
  * @param[out]  buf         = pointer to buffer to write from
  * @param[in]   len         = number of bytes to write
  */
-void ESC_write(const uint16_t address, const void *buf, const uint16_t len) {
+void ESC_write(uint16_t address, void *buf, uint16_t len) {
     /* Select device. */
     spi_select();
     /* Write address and command to device. */

@@ -70,7 +70,7 @@ The board uses onboard LEDs to indicate system status.
 
 ## Additional Info
 
-* EtherCAT currently running in `Free-run/SM sync` mode.
+* EtherCAT currently running in `Free-run` mode.
 
 ## Maintainer
 

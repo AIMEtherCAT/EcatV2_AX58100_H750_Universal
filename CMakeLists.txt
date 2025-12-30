@@ -75,14 +75,14 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Utils/io_utils.cpp"
         "Utils/buffer_manager.cpp"
 
-        "soes/device/slave_objectlist.c"
-        "soes/hal/esc_hw.c"
-        "soes/ecat_slv.c"
-        "soes/esc.c"
-        "soes/esc_coe.c"
-        "soes/esc_eep.c"
-        "soes/esc_eoe.c"
-        "soes/esc_foe.c"
+        "ecat/device/slave_objectlist.c"
+        "ecat/hal/esc_hw.c"
+        "ecat/soes/soes/ecat_slv.c"
+        "ecat/soes/soes/esc.c"
+        "ecat/soes/soes/esc_coe.c"
+        "ecat/soes/soes/esc_eep.c"
+        "ecat/soes/soes/esc_eoe.c"
+        "ecat/soes/soes/esc_foe.c"
 )
 
 # Add include paths
@@ -92,10 +92,10 @@ target_include_directories(${CMAKE_PROJECT_NAME} PRIVATE
         Application/
         Bsp/
         Utils/
-        soes/
-        soes/hal
-        soes/device
-        soes/include/sys/gcc
+        ecat/soes/soes
+        ecat/hal
+        ecat/device
+        ecat/soes/soes/include/sys/gcc
 )
 
 # Add project symbols (macros)
