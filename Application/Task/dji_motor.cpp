@@ -190,7 +190,7 @@ namespace aim::ecat::task::dji_motor {
                     case CtrlMode::SINGLE_ROUND_POSITION: {
                         cmds_[motor.cmd_packet_idx] = static_cast<int16_t>(motor.speed_pid.calculate(
                             motor.report.rpm.get(),
-                            -motor.speed_pid.calculate(
+                            motor.angle_pid.calculate(
                                 0,
                                 calculate_err(
                                     motor.report.ecd.get(),
