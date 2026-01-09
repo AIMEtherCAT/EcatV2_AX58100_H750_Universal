@@ -107,13 +107,33 @@ namespace aim::ecat::task {
 
         virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
 
-        void send_packet() const {
-            HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_);
+        void send_packet() {
+            send_start_time_.set_current();
+
+            while (true) {
+                if (HAL_FDCAN_GetTxFifoFreeLevel(can_inst_) != 0) {
+                    ready_to_sent_.set();
+                    break;
+                }
+                if (HAL_GetTick() - send_start_time_.get() > 2) {
+                    ready_to_sent_.clear();
+                    break;
+                }
+                taskYIELD();
+            }
+
+            if (ready_to_sent_.get()) {
+                HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_);
+            }
         }
 
     protected:
         FDCAN_TxHeaderTypeDef shared_tx_header_{};
         uint8_t shared_tx_buf_[8]{};
+
+    private:
+        ThreadSafeTimestamp send_start_time_{};
+        ThreadSafeFlag ready_to_sent_{};
     };
 
     class UartRunnable : public CustomRunnable {
