@@ -10,7 +10,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::adc {
-    ADC::ADC(buffer::Buffer *buffer) : CustomRunnable(false) {
+    ADC::ADC(buffer::Buffer *buffer) : CustomRunnable(false, TaskType::ADC) {
         init_peripheral(peripheral::Type::PERIPHERAL_ADC1);
 
         coefficient_[0] = buffer->read_float(buffer::EndianType::LITTLE);

@@ -10,7 +10,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::dm_motor {
-    DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
+    DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) : CanRunnable(true, TaskType::DM_MOTOR) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {

@@ -10,7 +10,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::lk_motor {
-    LK_MOTOR::LK_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
+    LK_MOTOR::LK_MOTOR(buffer::Buffer *buffer) : CanRunnable(true, TaskType::LK_MOTOR) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
 
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {

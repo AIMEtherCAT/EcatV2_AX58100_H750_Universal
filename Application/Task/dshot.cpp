@@ -10,7 +10,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::pwm {
-    DSHOT600::DSHOT600(buffer::Buffer *buffer) : CustomRunnable(false) {
+    DSHOT600::DSHOT600(buffer::Buffer *buffer) : CustomRunnable(false, TaskType::DSHOT) {
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
                 connection_lost_action_ = ConnectionLostAction::KEEP_LAST;

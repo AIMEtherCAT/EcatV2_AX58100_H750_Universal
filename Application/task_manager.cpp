@@ -116,7 +116,7 @@ namespace aim::ecat::task {
                     );
                     break;
                 }
-                case static_cast<uint8_t>(TaskType::MS5876_30BA): {
+                case static_cast<uint8_t>(TaskType::MS5837_30BA): {
                     conf->is_i2c_task.set();
                     conf->runnable = std::make_unique<ms5837::MS5837_30BA>(
                         buffer::get_buffer(buffer::Type::ECAT_ARGS)
@@ -155,7 +155,7 @@ namespace aim::ecat::task {
             }
 
             run_confs.push_back(conf);
-            if (conf->runnable->is_run_task_enabled_) {
+            if (conf->runnable->is_run_task_enabled) {
                 conf->thread_def = {
                     .name = nullptr,
                     .pthread = task_thread_func,

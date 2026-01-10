@@ -10,7 +10,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::dji_motor {
-    DJI_MOTOR::DJI_MOTOR(buffer::Buffer *buffer) : CanRunnable(true) {
+    DJI_MOTOR::DJI_MOTOR(buffer::Buffer *buffer) : CanRunnable(true, TaskType::DJI_MOTOR) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {

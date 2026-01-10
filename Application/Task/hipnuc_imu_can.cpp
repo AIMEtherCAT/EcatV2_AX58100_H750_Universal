@@ -10,7 +10,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::hipnuc_imu {
-    HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer *buffer) : CanRunnable(false) {
+    HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer *buffer) : CanRunnable(false, TaskType::HIPNUC_IMU_CAN) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);
         can_id_type_ = FDCAN_STANDARD_ID;
 

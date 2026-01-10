@@ -6,7 +6,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::pwm {
-    PWM_EXTERNAL::PWM_EXTERNAL(buffer::Buffer *buffer) : UartRunnable(true) {
+    PWM_EXTERNAL::PWM_EXTERNAL(buffer::Buffer *buffer) : UartRunnable(true, TaskType::EXTERNAL_PWM) {
         period = 1;
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 1: {

@@ -12,7 +12,7 @@ extern "C" {
 }
 
 namespace aim::ecat::task::pwm {
-    PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false) {
+    PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false, TaskType::ONBOARD_PWM) {
         uint32_t tim_freq = 0;
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {

@@ -26,7 +26,7 @@ namespace aim::ecat::task {
         DJI_MOTOR = 5,
         ONBOARD_PWM = 6,
         EXTERNAL_PWM = 7,
-        MS5876_30BA = 8,
+        MS5837_30BA = 8,
         ADC = 9,
         CAN_PMU = 10,
         SBUS_RC = 11,
@@ -40,7 +40,7 @@ namespace aim::ecat::task {
 
     class CustomRunnable {
     public:
-        explicit CustomRunnable(const bool is_run_task_enabled) : is_run_task_enabled_(is_run_task_enabled) {
+        explicit CustomRunnable(const bool is_run_task_enabled, const TaskType task_type) : task_type(task_type), is_run_task_enabled(is_run_task_enabled) {
         }
 
         virtual ~CustomRunnable() = default;
@@ -52,7 +52,7 @@ namespace aim::ecat::task {
 
         ThreadSafeFlag running{true};
 
-        bool is_run_task_enabled_{false};
+        bool is_run_task_enabled{false};
 
         virtual void run_task() {
         }
@@ -91,7 +91,7 @@ namespace aim::ecat::task {
 
     class CanRunnable : public CustomRunnable {
     public:
-        explicit CanRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
+        explicit CanRunnable(const bool is_run_task_enabled, const TaskType task_type) : CustomRunnable(is_run_task_enabled, task_type) {
         }
 
         ~CanRunnable() override = default;
@@ -122,7 +122,7 @@ namespace aim::ecat::task {
 
     class UartRunnable : public CustomRunnable {
     public:
-        explicit UartRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
+        explicit UartRunnable(const bool is_run_task_enabled, const TaskType task_type) : CustomRunnable(is_run_task_enabled, task_type) {
         }
 
         ~UartRunnable() override = default;
@@ -140,7 +140,7 @@ namespace aim::ecat::task {
 
     class I2CRunnable : public CustomRunnable {
     public:
-        explicit I2CRunnable(const bool is_run_task_enabled) : CustomRunnable(is_run_task_enabled) {
+        explicit I2CRunnable(const bool is_run_task_enabled, const TaskType task_type) : CustomRunnable(is_run_task_enabled, task_type) {
         }
 
         ~I2CRunnable() override = default;

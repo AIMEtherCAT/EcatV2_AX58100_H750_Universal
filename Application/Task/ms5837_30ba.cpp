@@ -6,7 +6,7 @@
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::ms5837 {
-    MS5837_30BA::MS5837_30BA(buffer::Buffer *buffer) : I2CRunnable(true) {
+    MS5837_30BA::MS5837_30BA(buffer::Buffer *buffer) : I2CRunnable(true, TaskType::MS5837_30BA) {
         period = 1;
 
         i2c_dma_tx_sem_ = xSemaphoreCreateBinary();
