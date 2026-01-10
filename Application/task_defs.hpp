@@ -102,13 +102,22 @@ namespace aim::ecat::task {
 
         virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
 
-        void send_packet() const {
-            HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_);
+        void send_packet() {
+            if (HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_) != HAL_OK) {
+                HAL_FDCAN_GetProtocolStatus(can_inst_, &status);
+                if (status.BusOff) {
+                    get_peripheral()->deinit();
+                    get_peripheral()->init();
+                }
+            }
         }
 
     protected:
         FDCAN_TxHeaderTypeDef shared_tx_header_{};
         uint8_t shared_tx_buf_[8]{};
+
+    private:
+        FDCAN_ProtocolStatusTypeDef status;
     };
 
     class UartRunnable : public CustomRunnable {
