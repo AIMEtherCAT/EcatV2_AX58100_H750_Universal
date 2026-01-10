@@ -3,9 +3,14 @@
 //
 #include <cfloat>
 
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
+
+extern "C" {
+#include "tim.h"
+}
+
 
 namespace aim::ecat::task::pwm {
     PWM_ONBOARD::PWM_ONBOARD(buffer::Buffer *buffer) : CustomRunnable(false) {

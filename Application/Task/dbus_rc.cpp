@@ -1,5 +1,5 @@
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::dbus_rc {
@@ -18,14 +18,14 @@ namespace aim::ecat::task::dbus_rc {
 
     void DBUS_RC::uart_recv(const uint16_t size) {
         if (size == 18) {
-            if (const uint16_t channel = (get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<
+            if (const uint16_t channel = (get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<
                                               uint8_t>()[0] |
-                                          get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<
+                                          get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<
                                               uint8_t>()[1] <<
                                           8) & 0x07ff; channel < DBUS_RC_CHANNAL_ERROR_VALUE) {
                 last_receive_time_.set_current();
                 uint8_t recv_buf[18] = {};
-                get_peripheral<peripheral::UartPeripheral>()->recv_buf->raw_read(recv_buf, 18);
+                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->raw_read(recv_buf, 18);
                 buf_.write(recv_buf, 18);
             }
         }

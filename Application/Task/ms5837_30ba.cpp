@@ -1,8 +1,8 @@
 //
 // Created by Hang XU on 24/10/2025.
 //
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::ms5837 {

@@ -117,10 +117,10 @@ void MX_FREERTOS_Init(void) {
   defaultTaskHandle = osThreadCreate(osThread(defaultTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */
-    osThreadDef(soesTask, soes_application, osPriorityHigh, 0, 512);
+    osThreadDef(soesTask, soes_application, osPriorityHigh, 0, 1024);
     soesTaskHandle = osThreadCreate(osThread(soesTask), NULL);
 
-    osThreadDef(soesLoaderTask, task_manager, osPriorityHigh, 0, 512);
+    osThreadDef(soesLoaderTask, task_manager, osPriorityHigh, 0, 1024);
     soesLoaderTaskHandle = osThreadCreate(osThread(soesLoaderTask), NULL);
     /* add threads, ... */
   /* USER CODE END RTOS_THREADS */

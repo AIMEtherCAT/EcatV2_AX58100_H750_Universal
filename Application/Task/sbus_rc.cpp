@@ -1,5 +1,5 @@
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::sbus_rc {
@@ -18,14 +18,14 @@ namespace aim::ecat::task::sbus_rc {
 
     void SBUS_RC::uart_recv(const uint16_t size) {
         if (size == 25) {
-            if (get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[0] == 0x0f &&
-                get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[24] == 0x00) {
+            if (get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[0] == 0x0f &&
+                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[24] == 0x00) {
                 last_receive_time_.set_current();
                 uint8_t recv_buf[23] = {};
 
-                get_peripheral<peripheral::UartPeripheral>()->recv_buf->reset_index();
-                get_peripheral<peripheral::UartPeripheral>()->recv_buf->skip(1);
-                get_peripheral<peripheral::UartPeripheral>()->recv_buf->read(recv_buf, 23);
+                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->reset_index();
+                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->skip(1);
+                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->read(recv_buf, 23);
                 buf_.write(recv_buf, 23);
             }
         }

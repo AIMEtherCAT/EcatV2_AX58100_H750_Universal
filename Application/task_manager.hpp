@@ -5,7 +5,7 @@
 #ifndef ECATV2_AX58100_H750_UNIVERSAL_TASK_MANAGER_H
 #define ECATV2_AX58100_H750_UNIVERSAL_TASK_MANAGER_H
 
-#include "peripheral_manager.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
 
 namespace aim::ecat::task {

@@ -1,24 +1,22 @@
 //
 // Created by Hang XU on 21/10/2025.
 //
-#include "buffer_manager.hpp"
+#include "buffer_utils.hpp"
 
 #include <map>
 #include <memory>
 #include <ranges>
 
-#include "task_defs.hpp"
-
 namespace aim::io::buffer {
-    DMA_BUFFER static uint32_t dshot1_motor1_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot1_motor2_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot1_motor3_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot1_motor4_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot1_motor1_dmabuffer[18];
+    DMA_BUFFER static uint32_t dshot1_motor2_dmabuffer[18];
+    DMA_BUFFER static uint32_t dshot1_motor3_dmabuffer[18];
+    DMA_BUFFER static uint32_t dshot1_motor4_dmabuffer[18];
 
-    DMA_BUFFER static uint32_t dshot2_motor1_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot2_motor2_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot2_motor3_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
-    DMA_BUFFER static uint32_t dshot2_motor4_dmabuffer[ecat::task::pwm::DSHOT_DMA_BUFFER_SIZE];
+    DMA_BUFFER static uint32_t dshot2_motor1_dmabuffer[18];
+    DMA_BUFFER static uint32_t dshot2_motor2_dmabuffer[18];
+    DMA_BUFFER static uint32_t dshot2_motor3_dmabuffer[18];
+    DMA_BUFFER static uint32_t dshot2_motor4_dmabuffer[18];
 
     DMA_BUFFER static uint8_t i2c3_recv_buf[512];
     DMA_BUFFER static uint8_t i2c3_send_buf[512];

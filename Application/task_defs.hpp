@@ -7,16 +7,11 @@
 
 #include <memory>
 #include <vector>
-#include <atomic>
 #include "c_task_warpper.h"
-#include "peripheral_manager.hpp"
-#include "pid.hpp"
+#include "peripheral_utils.hpp"
+#include "pid_utils.hpp"
 #include "thread_safe_utils.hpp"
-#include "crc16.hpp"
-
-extern "C" {
-#include "main.h"
-}
+#include "crc_utils.hpp"
 
 namespace aim::ecat::task {
     using namespace utils::thread_safety;
@@ -269,7 +264,7 @@ namespace aim::ecat::task {
                         get_peripheral<peripheral::I2CPeripheral>()->receive_by_dma(ADDR, 2);
                         if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
                             // rx finished, reading and switching to next state
-                            res = get_peripheral<peripheral::UartPeripheral>()->recv_buf->read_uint16(
+                            res = get_peripheral<peripheral::UartPeripheral>()->recv_buf_->read_uint16(
                                 buffer::EndianType::BIG);
                             break;
                         }
@@ -303,11 +298,11 @@ namespace aim::ecat::task {
                         get_peripheral<peripheral::I2CPeripheral>()->receive_by_dma(ADDR, 2);
                         if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
                             // rx finished, reading and switching to next state
-                            res = get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[0]
+                            res = get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[0]
                                   << 16 |
-                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[1]
+                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[1]
                                   << 8 |
-                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf->get_buf_pointer<uint8_t>()[2];
+                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[2];
                             break;
                         }
                     }
@@ -651,13 +646,10 @@ namespace aim::ecat::task {
             }
 
             void send_signal() const {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-volatile"
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_1, command_.channel1);
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_2, command_.channel2);
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_3, command_.channel3);
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_4, command_.channel4);
-#pragma clang diagnostic pop
             }
         };
 

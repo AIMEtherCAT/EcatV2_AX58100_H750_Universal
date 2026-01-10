@@ -1,9 +1,9 @@
 //
 // Created by Hang XU on 21/10/2025.
 //
-#include "buffer_manager.hpp"
+#include "buffer_utils.hpp"
 #include "main.h"
-#include "peripheral_manager.hpp"
+#include "peripheral_utils.hpp"
 #include "soes_application.hpp"
 #include "utypes.h"
 #include "task_manager.hpp"

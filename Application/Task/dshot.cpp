@@ -1,11 +1,13 @@
 //
 // Created by Hang XU on 22/10/2025.
 //
-#include <cfloat>
-
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
+
+extern "C" {
+#include "tim.h"
+}
 
 namespace aim::ecat::task::pwm {
     DSHOT600::DSHOT600(buffer::Buffer *buffer) : CustomRunnable(false) {

@@ -1,7 +1,7 @@
 #include "esc_coe.h"
 #include "utypes.h"
 #include <stddef.h>
-#include "settings.h"
+#include "../../Application/settings.h"
 
 #ifndef HW_REV
 #define HW_REV "001"

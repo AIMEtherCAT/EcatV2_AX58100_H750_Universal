@@ -1,9 +1,14 @@
 //
 // Created by Hang XU on 22/10/2025.
 //
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
+
+extern "C" {
+#include "fdcan.h"
+}
+
 
 namespace aim::ecat::task::hipnuc_imu {
     HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer *buffer) : CanRunnable(false) {

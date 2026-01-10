@@ -5,8 +5,6 @@
 #ifndef ECATV2_AX58100_H750_UNIVERSAL_C_WARPPER_H
 #define ECATV2_AX58100_H750_UNIVERSAL_C_WARPPER_H
 
-#include "dma.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,7 +1,7 @@
 //
 // Created by Hang XU on 21/10/2025.
 //
-#include "peripheral_manager.hpp"
+#include "peripheral_utils.hpp"
 #include "task_manager.hpp"
 #include "c_task_warpper.h"
 
@@ -11,18 +11,18 @@ using namespace aim::hardware;
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_UART_TxCpltCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
-        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_USART1))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_USART1))->is_busy_.clear(); // NOLINT
     } else if (huart->Instance == UART4) {
-        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART4))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART4))->is_busy_.clear(); // NOLINT
     } else if (huart->Instance == UART8) {
-        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy_.clear(); // NOLINT
     }
 
     for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
-        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->huart->Instance) {
+        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->huart_->Instance) {
             continue;
         }
 
@@ -37,11 +37,11 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
-        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->huart->Instance) {
+        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->huart_->Instance) {
             continue;
         }
 
-        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->recv_buf->reset_index();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->recv_buf_->reset_index();
         static_cast<UartRunnable *>(conf->runnable.get())->uart_recv(Size); // NOLINT
     }
 }
@@ -49,23 +49,23 @@ void HAL_UARTEx_RxEventCallback(UART_HandleTypeDef *huart, uint16_t Size) {
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
     if (huart->Instance == USART1) {
-        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_USART1))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_USART1))->is_busy_.clear(); // NOLINT
     } else if (huart->Instance == UART4) {
-        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART4))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART4))->is_busy_.clear(); // NOLINT
     } else if (huart->Instance == UART8) {
-        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::UartPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_UART8))->is_busy_.clear(); // NOLINT
     }
 
     for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_uart_task.get()) {
             continue;
         }
-        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->huart->Instance) {
+        if (huart->Instance != conf->runnable->get_peripheral<peripheral::UartPeripheral>()->huart_->Instance) {
             continue;
         }
 
-        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->recv_buf->reset();
-        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->send_buf->reset();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->recv_buf_->reset();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->send_buf_->reset();
         static_cast<UartRunnable *>(conf->runnable.get())->uart_err(); // NOLINT
     }
 }
@@ -73,14 +73,14 @@ void HAL_UART_ErrorCallback(UART_HandleTypeDef *huart) {
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_I2C_MasterTxCpltCallback(I2C_HandleTypeDef *hi2c) {
     if (hi2c->Instance == I2C3) {
-        static_cast<peripheral::I2CPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_I2C3))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::I2CPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_I2C3))->is_busy_.clear(); // NOLINT
     }
 
     for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_i2c_task.get()) {
             continue;
         }
-        if (hi2c->Instance != conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->hi2c->Instance) {
+        if (hi2c->Instance != conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->hi2c_->Instance) {
             continue;
         }
 
@@ -94,11 +94,11 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
         if (!conf->is_i2c_task.get()) {
             continue;
         }
-        if (hi2c->Instance != conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->hi2c->Instance) {
+        if (hi2c->Instance != conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->hi2c_->Instance) {
             continue;
         }
 
-        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->recv_buf->reset_index();
+        conf->runnable->get_peripheral<peripheral::UartPeripheral>()->recv_buf_->reset_index();
         static_cast<I2CRunnable *>(conf->runnable.get())->i2c_recv(); // NOLINT
     }
 }
@@ -106,19 +106,19 @@ void HAL_I2C_MasterRxCpltCallback(I2C_HandleTypeDef *hi2c) {
 // ReSharper disable once CppParameterMayBeConstPtrOrRef
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
     if (hi2c->Instance == I2C3) {
-        static_cast<peripheral::I2CPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_I2C3))->is_busy.clear(); // NOLINT
+        static_cast<peripheral::I2CPeripheral *>(get_peripheral(peripheral::Type::PERIPHERAL_I2C3))->is_busy_.clear(); // NOLINT
     }
 
     for (const std::shared_ptr<runnable_conf> &conf: *get_run_confs()) {
         if (!conf->is_i2c_task.get()) {
             continue;
         }
-        if (hi2c->Instance != conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->hi2c->Instance) {
+        if (hi2c->Instance != conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->hi2c_->Instance) {
             continue;
         }
 
-        conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->recv_buf->reset();
-        conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->send_buf->reset();
+        conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->recv_buf_->reset();
+        conf->runnable->get_peripheral<peripheral::I2CPeripheral>()->send_buf_->reset();
         static_cast<I2CRunnable *>(conf->runnable.get())->i2c_err(); // NOLINT
     }
 }
