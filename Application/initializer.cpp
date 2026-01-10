@@ -1,11 +1,9 @@
 //
 // Created by Hang XU on 21/10/2025.
 //
-
 #include "initializer.h"
-#include "peripheral_manager.hpp"
-#include "buffer_manager.hpp"
-#include "settings.h"
+#include "peripheral_utils.hpp"
+#include "buffer_utils.hpp"
 #include "soes_application.hpp"
 #include "task_manager.hpp"
 

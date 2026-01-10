@@ -26,7 +26,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "initializer.h"
+#include "../../Application/initializer.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/

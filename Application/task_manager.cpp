@@ -4,15 +4,14 @@
 
 #include "task_manager.hpp"
 
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
 #include "c_task_warpper.h"
 #include "settings.h"
 #include "soes_application.hpp"
 
 extern "C" {
-#include "gpio.h"
 #include "tim.h"
 }
 

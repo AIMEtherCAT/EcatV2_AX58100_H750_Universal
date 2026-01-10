@@ -66,12 +66,12 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
         "Application/Task/sbus_rc.cpp"
         "Application/Task/ms5837_30ba.cpp"
 
-        "Utils/pid.cpp"
-        "Utils/crc16.cpp"
-        "Utils/initializer.cpp"
-        "Utils/peripheral_manager.cpp"
+        "Utils/pid_utils.cpp"
+        "Utils/crc_utils.cpp"
+        "Application/initializer.cpp"
+        "Utils/peripheral_utils.cpp"
         "Utils/io_utils.cpp"
-        "Utils/buffer_manager.cpp"
+        "Utils/buffer_utils.cpp"
 
         "ecat/device/slave_objectlist.c"
         "ecat/hal/esc_hw.c"

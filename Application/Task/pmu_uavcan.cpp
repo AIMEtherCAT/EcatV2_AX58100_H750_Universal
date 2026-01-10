@@ -1,9 +1,14 @@
 //
 // Created by Hang XU on 22/10/2025.
 //
-#include "buffer_manager.hpp"
-#include "peripheral_manager.hpp"
+#include "buffer_utils.hpp"
+#include "peripheral_utils.hpp"
 #include "task_defs.hpp"
+
+extern "C" {
+#include "fdcan.h"
+}
+
 
 namespace aim::ecat::task::pmu_uavcan {
     PMU_UAVCAN::PMU_UAVCAN(buffer::Buffer */* buffer */) : CanRunnable(true) {
@@ -47,7 +52,7 @@ namespace aim::ecat::task::pmu_uavcan {
             HAL_GetTick() - last_receive_time_.get() > TID_TIMEOUT ||
             (
                 is_first &&
-                static_cast<uint8_t>(tail_.tid - rx_state_.transfer_id & 0x1F) > 1
+                static_cast<uint8_t>((tail_.tid - rx_state_.transfer_id) & 0x1F) > 1
             )) {
             rx_state_.initialized = 1;
             rx_state_.transfer_id = tail_.tid;
@@ -56,7 +61,7 @@ namespace aim::ecat::task::pmu_uavcan {
             rx_state_.crc = 0xFFFF;
 
             if (!is_first) {
-                rx_state_.transfer_id = tail_.tid + 1 & 0x1F;
+                rx_state_.transfer_id = (tail_.tid + 1) & 0x1F;
                 return;
             }
         }
@@ -100,7 +105,7 @@ namespace aim::ecat::task::pmu_uavcan {
 
             rx_state_.len = 0;
             rx_state_.toggle = 0;
-            rx_state_.transfer_id = rx_state_.transfer_id + 1 & 0x1F;
+            rx_state_.transfer_id = (rx_state_.transfer_id + 1) & 0x1F;
             memset(rx_state_.buffer, 0, BUF_SIZE);
         }
     }

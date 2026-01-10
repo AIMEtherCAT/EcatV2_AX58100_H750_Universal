@@ -1,8 +1,7 @@
 //
 // Created by Hang XU on 04/06/2025.
 //
-
-#include "peripheral_manager.hpp"
+#include "peripheral_utils.hpp"
 
 #include <map>
 #include <memory>
@@ -13,8 +12,6 @@ extern "C" {
 #include "usart.h"
 #include "tim.h"
 #include "adc.h"
-#include "cmsis_os.h"
-#include "stm32h7xx.h"
 
 extern osMutexId ADC1InitMutexHandle;
 extern osMutexId CANInitMutexHandle;
