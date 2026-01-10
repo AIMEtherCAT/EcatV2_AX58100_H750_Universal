@@ -9,7 +9,6 @@ extern "C" {
 #include "fdcan.h"
 }
 
-
 namespace aim::ecat::task::hipnuc_imu {
     HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer *buffer) : CanRunnable(false) {
         init_peripheral(peripheral::Type::PERIPHERAL_CAN);

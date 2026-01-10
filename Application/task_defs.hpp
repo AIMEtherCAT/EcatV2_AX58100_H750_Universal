@@ -815,21 +815,12 @@ namespace aim::ecat::task {
 
         struct MotorReport {
             ThreadSafeFlag is_motor_enabled{false};
+
             ThreadSafeValue<uint16_t> ecd{0};
             ThreadSafeValue<int16_t> speed{0};
             ThreadSafeValue<int16_t> current{0};
             ThreadSafeValue<uint8_t> temperature{0};
             ThreadSafeTimestamp last_receive_time{};
-        };
-
-        enum class CtrlMode : uint8_t {
-            OPEN_LOOP_CURRENT = 0x01,
-            TORQUE = 0x02,
-            SPEED_WITH_TORQUE_LIMIT = 0x03,
-            MULTI_ROUND_POSITION = 0x04,
-            MULTI_ROUND_POSITION_WITH_SPEED_LIMIT = 0x05,
-            SINGLE_ROUND_POSITION = 0x06,
-            SINGLE_ROUND_POSITION_WITH_SPEED_LIMIT = 0x07,
         };
 
         struct ControlCommand {
@@ -849,6 +840,29 @@ namespace aim::ecat::task {
             ThreadSafeValue<int32_t> cmd_int32{};
         };
 
+        struct Motor {
+            MotorReport report{};
+            ControlCommand command{};
+            uint32_t report_packet_id{};
+
+            [[nodiscard]] bool is_online() const {
+                return HAL_GetTick() - report.last_receive_time.get() <= 50;
+            }
+        };
+
+        enum class CtrlMode : uint8_t {
+            OPEN_LOOP_CURRENT = 0x01,
+            TORQUE = 0x02,
+            SPEED_WITH_TORQUE_LIMIT = 0x03,
+            MULTI_ROUND_POSITION = 0x04,
+            MULTI_ROUND_POSITION_WITH_SPEED_LIMIT = 0x05,
+            SINGLE_ROUND_POSITION = 0x06,
+            SINGLE_ROUND_POSITION_WITH_SPEED_LIMIT = 0x07,
+            BROADCAST_CURRENT = 0x08,
+        };
+
+        constexpr uint32_t BROADCAST_MODE_CTRL_PACKET_ID = 0x280;
+
         class LK_MOTOR final : public CanRunnable {
         public:
             explicit LK_MOTOR(buffer::Buffer *buffer);
@@ -864,17 +878,13 @@ namespace aim::ecat::task {
             void on_connection_lost() override;
 
         private:
-            MotorReport report_{};
             CtrlMode mode_{};
             ThreadSafeValue<State> state_{State::DISABLED};
-            ControlCommand command_{};
+
+            Motor motor_[4]{};
             uint32_t packet_id_{};
 
             ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
-
-            [[nodiscard]] bool is_online() const {
-                return HAL_GetTick() - report_.last_receive_time.get() <= 50;
-            }
 
             void generate_disable_packet() {
                 memset(shared_tx_buf_, 0, 8);
