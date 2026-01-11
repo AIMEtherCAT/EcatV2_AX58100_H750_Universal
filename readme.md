@@ -73,6 +73,7 @@ The board uses onboard LEDs to indicate system status.
 ## Additional Info
 
 * EtherCAT currently running in `Free-run` mode.
+* SOES are added as a submodule. For first-time initialization, please use the command ``git submodule update --init --recursive``
 
 ## Maintainer
 
