@@ -59,6 +59,8 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define CHANNEL_2_Pin GPIO_PIN_0
 #define CHANNEL_2_GPIO_Port GPIOC
+#define INVERT_UART8_Pin GPIO_PIN_4
+#define INVERT_UART8_GPIO_Port GPIOA
 #define CHANNEL_1_Pin GPIO_PIN_5
 #define CHANNEL_1_GPIO_Port GPIOC
 #define ETHERCAT_NS_Pin GPIO_PIN_11

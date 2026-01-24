@@ -167,6 +167,8 @@ namespace aim::ecat::task {
 
             void uart_err() override;
 
+            void exit() override;
+
         private:
             ThreadSafeTimestamp last_receive_time_{};
             ThreadSafeBuffer buf_{18};
@@ -602,6 +604,8 @@ namespace aim::ecat::task {
             void uart_recv(uint16_t size) override;
 
             void uart_err() override;
+
+            void exit() override;
 
         private:
             ThreadSafeTimestamp last_receive_time_{};

@@ -1,9 +1,11 @@
 #include "buffer_utils.hpp"
+#include "main.h"
 #include "peripheral_utils.hpp"
 #include "task_defs.hpp"
 
 namespace aim::ecat::task::dbus_rc {
     DBUS_RC::DBUS_RC(buffer::Buffer * /* buffer */) : UartRunnable(false, TaskType::DBUS_RC) {
+        HAL_GPIO_WritePin(INVERT_UART8_GPIO_Port, INVERT_UART8_Pin, GPIO_PIN_SET);
         init_peripheral(peripheral::Type::PERIPHERAL_UART8);
 
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(18);
@@ -34,5 +36,10 @@ namespace aim::ecat::task::dbus_rc {
 
     void DBUS_RC::uart_err() {
         get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(18);
+    }
+
+    void DBUS_RC::exit() {
+        get_peripheral()->deinit();
+        HAL_GPIO_WritePin(INVERT_UART8_GPIO_Port, INVERT_UART8_Pin, GPIO_PIN_RESET);
     }
 }
