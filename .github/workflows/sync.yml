@@ -1,0 +1,24 @@
+name: sync.yml
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Sync changes to other repos
+        uses: Calc1te/github-action-push-to-another-repository@main
+        env:
+          SSH_DEPLOY_KEY: ${{ secrets.SSH_DEPLOY_KEY }}
+          API_TOKEN_GITHUB: ${{ secrets.API_TOKEN_GITHUB }}
+        with:
+          include-patterns-file: '.syncpattern'
+          destination-github-username: 'AIMEtherCAT'
+          destination-repository-name: 'EcatV2_AX58100_H723_Universal'
+          user-email: me@hangxu.me
+          target-branch: main
