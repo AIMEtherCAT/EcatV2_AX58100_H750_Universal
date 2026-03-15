@@ -6,5 +6,6 @@
 + Utils/pid_utils.hpp
 + Utils/thread_safe_utils.hpp
 + Application/***
++ cmake/task_sources.cmake
 - Application/board_config.h
 - *
