@@ -33,7 +33,7 @@ namespace aim::io::buffer {
     DMA_BUFFER static uint16_t adc1_recv_buf[2];
 
     static uint8_t ecat_args_buf[1024];
-    static uint8_t ecat_slave_to_master_buf[80];
+    static uint8_t ecat_slave_to_master_buf[112];
     static uint8_t ecat_master_to_slave_buf[80];
 
     static std::map<Type, std::unique_ptr<Buffer> > instances;

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Slave xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="com.rtlabs.emf.esx" fileVersion="3" id="58100_H750_UniversalModule" productCode="0x03">
+<Slave xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="com.rtlabs.emf.esx" fileVersion="3" id="58100_H750_UniversalModule_LargePDO" productCode="0x04">
   <Name>rm</Name>
   <Vendor>
     <Id>0</Id>
@@ -47,8 +47,8 @@
       <Index>0x1008</Index>
       <Name>Manufacturer Device Name</Name>
       <DataType>VISIBLE_STRING</DataType>
-      <DefaultValue>58100_H750_UniversalModule</DefaultValue>
-      <Length>26</Length>
+      <DefaultValue>58100_H750_UniversalModule_LargePDO</DefaultValue>
+      <Length>35</Length>
     </Item>
     <Item>
       <Index>0x1009</Index>
@@ -84,7 +84,7 @@
         <Index>0x02</Index>
         <Name>Product Code</Name>
         <DataType>UNSIGNED32</DataType>
-        <DefaultValue>0x03</DefaultValue>
+        <DefaultValue>0x04</DefaultValue>
       </SubItem>
       <SubItem>
         <Index>0x03</Index>
@@ -212,7 +212,7 @@
         <Index>0x00</Index>
         <Name>Max SubIndex</Name>
         <DataType>UNSIGNED8</DataType>
-        <DefaultValue>5</DefaultValue>
+        <DefaultValue>14</DefaultValue>
       </SubItem>
       <SubItem>
         <Index>0x01</Index>
@@ -243,6 +243,60 @@
         <Name>s2m5</Name>
         <DataType>UNSIGNED32</DataType>
         <DefaultValue>0x60010540</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x06</Index>
+        <Name>s2m6</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010640</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x07</Index>
+        <Name>s2m7</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010740</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x08</Index>
+        <Name>s2m8</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010840</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x09</Index>
+        <Name>s2m9</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010940</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x0A</Index>
+        <Name>s2m10</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010A40</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x0B</Index>
+        <Name>s2m11</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010B40</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x0C</Index>
+        <Name>s2m12</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010C40</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x0D</Index>
+        <Name>s2m13</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010D40</DefaultValue>
+      </SubItem>
+      <SubItem>
+        <Index>0x0E</Index>
+        <Name>s2m14</Name>
+        <DataType>UNSIGNED32</DataType>
+        <DefaultValue>0x60010E40</DefaultValue>
       </SubItem>
     </Item>
     <Item Managed="true">
@@ -354,7 +408,7 @@
         <Backup>false</Backup>
         <Name>CycleTime</Name>
         <DataType>UNSIGNED32</DataType>
-        <DefaultValue>30000</DefaultValue>
+        <DefaultValue>150000</DefaultValue>
         <Variable>CycleTime</Variable>
         <VariableType>Manufacturer</VariableType>
       </SubItem>
@@ -370,11 +424,11 @@
       </SubItem>
       <SubItem>
         <Index>0x05</Index>
-        <Access>RO</Access>
+        <Access>RW</Access>
         <Backup>false</Backup>
         <Name>Minimum Cycle Time</Name>
         <DataType>UNSIGNED32</DataType>
-        <DefaultValue>6000</DefaultValue>
+        <DefaultValue>135000</DefaultValue>
         <Variable>Minimum_Cycle_Time</Variable>
         <VariableType>Manufacturer</VariableType>
       </SubItem>
@@ -417,7 +471,7 @@
         <Backup>false</Backup>
         <Name>CycleTime</Name>
         <DataType>UNSIGNED32</DataType>
-        <DefaultValue>30000</DefaultValue>
+        <DefaultValue>150000</DefaultValue>
         <Variable>CycleTime</Variable>
         <VariableType>Manufacturer</VariableType>
       </SubItem>
@@ -433,11 +487,11 @@
       </SubItem>
       <SubItem>
         <Index>0x05</Index>
-        <Access>RO</Access>
+        <Access>RW</Access>
         <Backup>false</Backup>
         <Name>Minimum Cycle Time</Name>
         <DataType>UNSIGNED32</DataType>
-        <DefaultValue>6000</DefaultValue>
+        <DefaultValue>135000</DefaultValue>
         <Variable>Minimum_Cycle_Time</Variable>
         <VariableType>Manufacturer</VariableType>
       </SubItem>
@@ -473,7 +527,7 @@
         <Index>0x00</Index>
         <Name>Max SubIndex</Name>
         <DataType>UNSIGNED8</DataType>
-        <DefaultValue>5</DefaultValue>
+        <DefaultValue>14</DefaultValue>
       </SubItem>
       <SubItem>
         <Index>0x01</Index>
@@ -520,6 +574,96 @@
         <Access>RO</Access>
         <Backup>false</Backup>
         <Name>s2m5</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x06</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m6</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x07</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m7</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x08</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m8</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x09</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m9</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x0A</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m10</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x0B</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m11</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x0C</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m12</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x0D</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m13</Name>
+        <DataType>UNSIGNED64</DataType>
+        <DefaultValue>0</DefaultValue>
+        <PdoMapping>TX</PdoMapping>
+        <VariableType>Input</VariableType>
+      </SubItem>
+      <SubItem>
+        <Index>0x0E</Index>
+        <Access>RO</Access>
+        <Backup>false</Backup>
+        <Name>s2m14</Name>
         <DataType>UNSIGNED64</DataType>
         <DefaultValue>0</DefaultValue>
         <PdoMapping>TX</PdoMapping>
@@ -801,6 +945,60 @@
       <MappedSubIndex>0x05</MappedSubIndex>
       <Variable>s2m5</Variable>
     </Entry>
+    <Entry>
+      <Index>0x6</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x06</MappedSubIndex>
+      <Variable>s2m6</Variable>
+    </Entry>
+    <Entry>
+      <Index>0x7</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x07</MappedSubIndex>
+      <Variable>s2m7</Variable>
+    </Entry>
+    <Entry>
+      <Index>0x8</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x08</MappedSubIndex>
+      <Variable>s2m8</Variable>
+    </Entry>
+    <Entry>
+      <Index>0x9</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x09</MappedSubIndex>
+      <Variable>s2m9</Variable>
+    </Entry>
+    <Entry>
+      <Index>0xA</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x0A</MappedSubIndex>
+      <Variable>s2m10</Variable>
+    </Entry>
+    <Entry>
+      <Index>0xB</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x0B</MappedSubIndex>
+      <Variable>s2m11</Variable>
+    </Entry>
+    <Entry>
+      <Index>0xC</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x0C</MappedSubIndex>
+      <Variable>s2m12</Variable>
+    </Entry>
+    <Entry>
+      <Index>0xD</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x0D</MappedSubIndex>
+      <Variable>s2m13</Variable>
+    </Entry>
+    <Entry>
+      <Index>0xE</Index>
+      <MappedIndex>0x6001</MappedIndex>
+      <MappedSubIndex>0x0E</MappedSubIndex>
+      <Variable>s2m14</Variable>
+    </Entry>
   </TxPdo>
   <Input>
     <Index>0x6000</Index>
@@ -813,7 +1011,7 @@
     <Index>0x6001</Index>
     <Name>slave2master</Name>
     <Type>UNSIGNED64</Type>
-    <Length>10</Length>
+    <Length>14</Length>
     <PdoMapping>TX</PdoMapping>
     <ObjectType>ARRAY</ObjectType>
     <Member>
@@ -883,6 +1081,34 @@
       <Index>0x0A</Index>
       <Access>RO</Access>
       <Name>s2m10</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x0B</Index>
+      <Access>RO</Access>
+      <Name>s2m11</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x0C</Index>
+      <Access>RO</Access>
+      <Name>s2m12</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x0D</Index>
+      <Access>RO</Access>
+      <Name>s2m13</Name>
+      <Type>UNSIGNED64</Type>
+      <PdoMapping>TX</PdoMapping>
+    </Member>
+    <Member>
+      <Index>0x0E</Index>
+      <Access>RO</Access>
+      <Name>s2m14</Name>
       <Type>UNSIGNED64</Type>
       <PdoMapping>TX</PdoMapping>
     </Member>
