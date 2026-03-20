@@ -90,7 +90,7 @@ namespace aim::ecat::application {
         is_slave_ready.clear();
 
         memset(Obj.master2slave, 0, 80);
-        memset(Obj.slave2master, 0, 80);
+        memset(Obj.slave2master, 0, 112);
         Obj.sdo_len = 0;
         Obj.master_status = MASTER_UNKNOWN;
         Obj.slave_status = SLAVE_INITIALIZING;
@@ -214,7 +214,7 @@ namespace aim::ecat::application {
         }
 
         buffer::get_buffer(buffer::Type::ECAT_SLAVE_TO_MASTER)->raw_read(
-            reinterpret_cast<uint8_t *>(Obj.slave2master), 80);
+            reinterpret_cast<uint8_t *>(Obj.slave2master), 112);
     }
 
     [[noreturn]] void soes_application_impl() {
