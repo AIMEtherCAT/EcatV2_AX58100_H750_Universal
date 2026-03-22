@@ -157,6 +157,13 @@ namespace aim::ecat::task {
                     );
                     break;
                 }
+                case static_cast<uint8_t>(TaskType::VT13_RC): {
+                    conf->is_uart_task.set();
+                    conf->runnable = std::make_unique<vt13_rc::VT13_RC>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
                 default: {
                 }
             }

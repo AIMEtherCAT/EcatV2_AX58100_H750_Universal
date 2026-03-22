@@ -991,8 +991,6 @@ namespace aim::ecat::task {
         constexpr uint8_t   CRC_BIT0 = 19;
         constexpr uint8_t   CRC_BIT1 = 20;
 
-
-
         class VT13_RC final : public UartRunnable {
         public:
             explicit VT13_RC(buffer::Buffer *buffer);
@@ -1007,7 +1005,7 @@ namespace aim::ecat::task {
 
         private:
             ThreadSafeTimestamp last_receive_time_{};
-            ThreadSafeBuffer buf_{18};
+            ThreadSafeBuffer buf_{RC_MSG_PKG_LEN};
         };
     }
 }
