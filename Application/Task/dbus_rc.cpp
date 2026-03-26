@@ -24,7 +24,7 @@ namespace aim::ecat::task::dbus_rc {
                                               uint8_t>()[0] |
                                           get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<
                                               uint8_t>()[1] <<
-                                          8) & 0x07ff; channel < DBUS_RC_CHANNAL_ERROR_VALUE) {
+                                          8) & 0x07ff; channel < DBUS_RC_CHANNEL_ERROR_VALUE) {
                 last_receive_time_.set_current();
                 uint8_t recv_buf[18] = {};
                 get_peripheral<peripheral::UartPeripheral>()->recv_buf_->raw_read(recv_buf, 18);

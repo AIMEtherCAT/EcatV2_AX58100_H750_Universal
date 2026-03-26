@@ -32,7 +32,8 @@ namespace aim::ecat::task {
         CAN_PMU = 10,
         SBUS_RC = 11,
         DM_MOTOR = 12,
-        SUPER_CAP = 13
+        SUPER_CAP = 13,
+        VT13_RC = 14
     };
 
     enum class ConnectionLostAction : uint8_t {
@@ -161,7 +162,7 @@ namespace aim::ecat::task {
     };
 
     namespace dbus_rc {
-        constexpr uint16_t DBUS_RC_CHANNAL_ERROR_VALUE = 1700;
+        constexpr uint16_t DBUS_RC_CHANNEL_ERROR_VALUE = 1700;
 
         class DBUS_RC final : public UartRunnable {
         public:
@@ -980,6 +981,31 @@ namespace aim::ecat::task {
             ThreadSafeBuffer tx_buf_{4};
 
             ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
+        };
+    }
+    namespace vt13_rc {
+        constexpr uint8_t   RC_FULL_PKG_LEN = 21;
+        constexpr uint8_t   RC_HEADER_LEN = 2;
+        constexpr uint8_t   RC_MSG_PKG_LEN = 17;
+
+        constexpr uint8_t   CRC_BIT0 = 19;
+        constexpr uint8_t   CRC_BIT1 = 20;
+
+        class VT13_RC final : public UartRunnable {
+        public:
+            explicit VT13_RC(buffer::Buffer *buffer);
+
+            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+
+            void uart_recv(uint16_t size) override;
+
+            void uart_err() override;
+
+            void exit() override;
+
+        private:
+            ThreadSafeTimestamp last_receive_time_{};
+            ThreadSafeBuffer buf_{RC_MSG_PKG_LEN};
         };
     }
 }
