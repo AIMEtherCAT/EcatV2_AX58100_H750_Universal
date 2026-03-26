@@ -7,7 +7,7 @@
 #endif
 
 #ifndef SW_REV
-#define SW_REV "1.0"
+#define SW_REV "8.0"
 #endif
 
 static const char acName1000[] = "Device Type";
