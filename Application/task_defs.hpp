@@ -987,6 +987,7 @@ namespace aim::ecat::task {
         constexpr uint8_t   RC_FULL_PKG_LEN = 21;
         constexpr uint8_t   RC_HEADER_LEN = 2;
         constexpr uint8_t   RC_MSG_PKG_LEN = 17;
+        constexpr uint8_t   SEND_MSG_PKG_LEN = 18;
 
         constexpr uint8_t   CRC_BIT0 = 19;
         constexpr uint8_t   CRC_BIT1 = 20;
@@ -1008,6 +1009,46 @@ namespace aim::ecat::task {
             ThreadSafeBuffer buf_{RC_MSG_PKG_LEN};
         };
     }
+    // namespace custom_controller {
+    //     constexpr uint8_t   DMA_RECV_LEN = 40;
+    //
+    //     constexpr uint8_t   RC_FULL_PKG_LEN = 21;
+    //     constexpr uint8_t   RC_HEADER_LEN = 2;
+    //     constexpr uint8_t   RC_MSG_PKG_LEN = 17;
+    //
+    //     constexpr uint8_t   CRC_BIT0_RC = 19;
+    //     constexpr uint8_t   CRC_BIT1_RC = 20;
+    //
+    //     constexpr uint8_t   CUSTOM_C_PKG_LEN = 39;
+    //     constexpr uint8_t   FRAME_HEADER_LEN = 5;
+    //     constexpr uint8_t   CMD_ID_LEN = 2;
+    //     constexpr uint8_t   CUSTOM_C_DATA_LEN = 30;
+    //
+    //     constexpr uint16_t  CUSTOM_C_RECV_CMD = 0x0302;
+    //     constexpr uint8_t   IMAGE_TRANS_LINK_SOF = 0xA5;
+    //
+    //     constexpr uint8_t   CRC_16_BIT0_CC = 37;
+    //     constexpr uint8_t   CRC_16_BIT1_CC = 38;
+    //
+    //
+    //
+    //     class CUSTOM_CONTROLLER final : public UartRunnable {
+    //     public:
+    //         explicit CUSTOM_CONTROLLER(buffer::Buffer *buffer);
+    //
+    //         void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+    //
+    //         void uart_recv(uint16_t size) override;
+    //
+    //         void uart_err() override;
+    //
+    //         void exit() override;
+    //
+    //     private:
+    //         ThreadSafeTimestamp last_receive_time_{};
+    //         ThreadSafeBuffer buf_{RC_MSG_PKG_LEN};
+    //     };
+    // }
 }
 
 #endif //TASK_DEFS_H
