@@ -28,6 +28,7 @@ namespace aim::ecat::task::vt13_rc {
         uint8_t recv_buf[RC_FULL_PKG_LEN] = {};
         get_peripheral<peripheral::UartPeripheral>()->recv_buf_->raw_read(recv_buf, RC_FULL_PKG_LEN);
         buf_.write(&recv_buf[2], RC_MSG_PKG_LEN);
+        last_receive_time_.set_current();
       }
     }
     get_peripheral<peripheral::UartPeripheral>()->receive_by_dma(32);
