@@ -16,6 +16,7 @@ set(PROJECT_SOURCES
         Application/Task/sbus_rc.cpp
         Application/Task/ms5837_30ba.cpp
         Application/Task/super_cap.cpp
+        Application/Task/vt13_rc.cpp
 
         Utils/pid_utils.cpp
         Utils/crc_utils.cpp

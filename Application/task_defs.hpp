@@ -7,6 +7,7 @@
 
 #include <memory>
 #include <vector>
+
 #include "c_task_warpper.h"
 #include "peripheral_utils.hpp"
 #include "pid_utils.hpp"
@@ -14,12 +15,14 @@
 #include "crc_utils.hpp"
 #include "board_config.h"
 
-namespace aim::ecat::task {
+namespace aim::ecat::task
+{
     using namespace utils::thread_safety;
     using namespace io;
     using namespace hardware;
 
-    enum class TaskType : uint8_t {
+    enum class TaskType : uint8_t
+    {
         DBUS_RC = 1,
         LK_MOTOR = 2,
         HIPNUC_IMU_CAN = 3,
@@ -32,18 +35,22 @@ namespace aim::ecat::task {
         CAN_PMU = 10,
         SBUS_RC = 11,
         DM_MOTOR = 12,
-        SUPER_CAP = 13
+        SUPER_CAP = 13,
+        VT13_RC = 14
     };
 
-    enum class ConnectionLostAction : uint8_t {
+    enum class ConnectionLostAction : uint8_t
+    {
         KEEP_LAST = 0x01,
         RESET_TO_DEFAULT = 0x02
     };
 
-    class CustomRunnable {
+    class CustomRunnable
+    {
     public:
         explicit CustomRunnable(const bool is_run_task_enabled, const TaskType task_type) : task_type(task_type),
-            is_run_task_enabled(is_run_task_enabled) {
+            is_run_task_enabled(is_run_task_enabled)
+        {
         }
 
         virtual ~CustomRunnable() = default;
@@ -57,59 +64,72 @@ namespace aim::ecat::task {
 
         bool is_run_task_enabled{false};
 
-        virtual void run_task() {
+        virtual void run_task()
+        {
         }
 
-        virtual void on_connection_lost() {
+        virtual void on_connection_lost()
+        {
         }
 
-        virtual void on_connection_recover() {
+        virtual void on_connection_recover()
+        {
         }
 
-        virtual void write_to_master(buffer::Buffer *slave_to_master_buf) {
+        virtual void write_to_master(buffer::Buffer* slave_to_master_buf)
+        {
             UNUSED(slave_to_master_buf);
         }
 
-        virtual void read_from_master(buffer::Buffer *master_to_slave_buf) {
+        virtual void read_from_master(buffer::Buffer* master_to_slave_buf)
+        {
             UNUSED(master_to_slave_buf);
         }
 
-        virtual void exit() {
+        virtual void exit()
+        {
             get_peripheral()->deinit();
         }
 
-        void init_peripheral(const peripheral::Type type) {
+        void init_peripheral(const peripheral::Type type)
+        {
             peripheral_ = peripheral::get_peripheral(type);
             get_peripheral()->init();
         }
 
-        template<typename T = peripheral::Peripheral>
-        [[nodiscard]] T *get_peripheral() const {
-            return static_cast<T *>(peripheral_);
+        template <typename T = peripheral::Peripheral>
+        [[nodiscard]] T* get_peripheral() const
+        {
+            return static_cast<T*>(peripheral_);
         }
 
     protected:
-        peripheral::Peripheral *peripheral_{};
+        peripheral::Peripheral* peripheral_{};
     };
 
-    class CanRunnable : public CustomRunnable {
+    class CanRunnable : public CustomRunnable
+    {
     public:
         explicit CanRunnable(const bool is_run_task_enabled, const TaskType task_type) : CustomRunnable(
-            is_run_task_enabled, task_type) {
+            is_run_task_enabled, task_type)
+        {
         }
 
         ~CanRunnable() override = default;
 
-        FDCAN_HandleTypeDef *can_inst_{};
+        FDCAN_HandleTypeDef* can_inst_{};
 
         uint32_t can_id_type_{};
 
-        virtual void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data);
+        virtual void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data);
 
-        void send_packet() {
-            if (HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_) != HAL_OK) {
+        void send_packet()
+        {
+            if (HAL_FDCAN_AddMessageToTxFifoQ(can_inst_, &shared_tx_header_, shared_tx_buf_) != HAL_OK)
+            {
                 HAL_FDCAN_GetProtocolStatus(can_inst_, &status);
-                if (status.BusOff) {
+                if (status.BusOff)
+                {
                     get_peripheral()->deinit();
                     get_peripheral()->init();
                 }
@@ -124,50 +144,61 @@ namespace aim::ecat::task {
         FDCAN_ProtocolStatusTypeDef status;
     };
 
-    class UartRunnable : public CustomRunnable {
+    class UartRunnable : public CustomRunnable
+    {
     public:
         explicit UartRunnable(const bool is_run_task_enabled, const TaskType task_type) : CustomRunnable(
-            is_run_task_enabled, task_type) {
+            is_run_task_enabled, task_type)
+        {
         }
 
         ~UartRunnable() override = default;
 
-        virtual void uart_recv(const uint16_t size) {
+        virtual void uart_recv(const uint16_t size)
+        {
             UNUSED(size);
         }
 
-        virtual void uart_err() {
+        virtual void uart_err()
+        {
         }
 
-        virtual void uart_dma_tx_finished_callback() {
+        virtual void uart_dma_tx_finished_callback()
+        {
         }
     };
 
-    class I2CRunnable : public CustomRunnable {
+    class I2CRunnable : public CustomRunnable
+    {
     public:
         explicit I2CRunnable(const bool is_run_task_enabled, const TaskType task_type) : CustomRunnable(
-            is_run_task_enabled, task_type) {
+            is_run_task_enabled, task_type)
+        {
         }
 
         ~I2CRunnable() override = default;
 
         virtual void i2c_recv();
 
-        virtual void i2c_err() {
+        virtual void i2c_err()
+        {
         }
 
-        virtual void i2c_dma_tx_finished_callback() {
+        virtual void i2c_dma_tx_finished_callback()
+        {
         }
     };
 
-    namespace dbus_rc {
+    namespace dbus_rc
+    {
         constexpr uint16_t DBUS_RC_CHANNAL_ERROR_VALUE = 1700;
 
-        class DBUS_RC final : public UartRunnable {
+        class DBUS_RC final : public UartRunnable
+        {
         public:
-            explicit DBUS_RC(buffer::Buffer *buffer);
+            explicit DBUS_RC(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
             void uart_recv(uint16_t size) override;
 
@@ -181,7 +212,8 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace ms5837 {
+    namespace ms5837
+    {
         constexpr uint8_t D1_OSR256_CMD = 0x40;
         constexpr uint8_t D1_OSR512_CMD = 0x42;
         constexpr uint8_t D1_OSR1024_CMD = 0x44;
@@ -204,7 +236,8 @@ namespace aim::ecat::task {
         constexpr uint8_t RETRY_TIMES = 3;
         constexpr uint32_t TX_TIMEOUT = 50;
 
-        enum class State : uint8_t {
+        enum class State : uint8_t
+        {
             INITIALIZING = 0,
 
             READ_C1 = 1,
@@ -220,11 +253,12 @@ namespace aim::ecat::task {
             CALCULATE = 9,
         };
 
-        class MS5837_30BA final : public I2CRunnable {
+        class MS5837_30BA final : public I2CRunnable
+        {
         public:
-            explicit MS5837_30BA(buffer::Buffer *buffer);
+            explicit MS5837_30BA(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
             void run_task() override;
 
@@ -270,16 +304,20 @@ namespace aim::ecat::task {
             ThreadSafeValue<int32_t> temp2_{};
             ThreadSafeValue<int32_t> p2_{};
 
-            uint16_t read_calibration_data(const int index, uint8_t *retry_times) const {
+            uint16_t read_calibration_data(const int index, uint8_t* retry_times) const
+            {
                 uint8_t cmd = 0;
                 uint16_t res = 0;
                 cmd = PROM_READ_CMD_BEGIN + index * 2;
                 get_peripheral<peripheral::I2CPeripheral>()->send_by_dma(ADDR, &cmd, 1);
-                while ((*retry_times)--) {
-                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                while ((*retry_times)--)
+                {
+                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE)
+                    {
                         // tx finished, waiting for rx
                         get_peripheral<peripheral::I2CPeripheral>()->receive_by_dma(ADDR, 2);
-                        if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                        if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE)
+                        {
                             // rx finished, reading and switching to next state
                             res = get_peripheral<peripheral::UartPeripheral>()->recv_buf_->read_uint16(
                                 buffer::EndianType::BIG);
@@ -291,11 +329,14 @@ namespace aim::ecat::task {
                 return res;
             }
 
-            bool start_adc(const uint8_t cmd_used, uint8_t *retry_times) const {
+            bool start_adc(const uint8_t cmd_used, uint8_t* retry_times) const
+            {
                 const uint8_t cmd = cmd_used;
                 get_peripheral<peripheral::I2CPeripheral>()->send_by_dma(ADDR, &cmd, 1);
-                while ((*retry_times)--) {
-                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                while ((*retry_times)--)
+                {
+                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE)
+                    {
                         return true;
                     }
                     vTaskDelay(adc_wait_time_);
@@ -304,23 +345,27 @@ namespace aim::ecat::task {
                 return false;
             }
 
-            uint32_t read_adc_data(uint8_t *retry_times) const {
+            uint32_t read_adc_data(uint8_t* retry_times) const
+            {
                 // ReSharper disable once CppVariableCanBeMadeConstexpr
                 const uint8_t cmd = ADC_READ_CMD;
                 uint32_t res = 0;
                 get_peripheral<peripheral::I2CPeripheral>()->send_by_dma(ADDR, &cmd, 1);
-                while ((*retry_times)--) {
-                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                while ((*retry_times)--)
+                {
+                    if (xSemaphoreTake(i2c_dma_tx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE)
+                    {
                         // tx finished, waiting for rx
                         get_peripheral<peripheral::I2CPeripheral>()->receive_by_dma(ADDR, 2);
-                        if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE) {
+                        if (xSemaphoreTake(i2c_dma_rx_sem_, pdMS_TO_TICKS(TX_TIMEOUT)) == pdTRUE)
+                        {
                             // rx finished, reading and switching to next state
                             res = get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[0]
-                                  << 16 |
-                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[1]
-                                  << 8 |
-                                  get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[
-                                      2];
+                                << 16 |
+                                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[1]
+                                << 8 |
+                                get_peripheral<peripheral::UartPeripheral>()->recv_buf_->get_buf_pointer<uint8_t>()[
+                                    2];
                             break;
                         }
                     }
@@ -332,14 +377,17 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace dm_motor {
-        enum class CtrlMode : uint32_t {
+    namespace dm_motor
+    {
+        enum class CtrlMode : uint32_t
+        {
             MIT = 1,
             POSITION_WITH_SPEED_LIMIT = 2,
             SPEED = 3
         };
 
-        enum class State {
+        enum class State
+        {
             OFFLINE,
             SENDING_MODE_CHANGE,
             PENDING_MODE_CHANGE,
@@ -347,13 +395,15 @@ namespace aim::ecat::task {
             MODE_CHANGE_BYPASSED,
         };
 
-        struct MotorState {
+        struct MotorState
+        {
             ThreadSafeValue<State> state{};
             ThreadSafeFlag is_motor_enabled{false};
             ThreadSafeTimestamp enter_timestamp{};
         };
 
-        struct ControlCommand {
+        struct ControlCommand
+        {
             ThreadSafeFlag is_enable{};
             ThreadSafeBuffer cmd{8};
         };
@@ -361,15 +411,16 @@ namespace aim::ecat::task {
         // ms
         constexpr int MODE_CHANGE_BYPASS_TIMEOUT = 1000;
 
-        class DM_MOTOR final : public CanRunnable {
+        class DM_MOTOR final : public CanRunnable
+        {
         public:
-            explicit DM_MOTOR(buffer::Buffer *buffer);
+            explicit DM_MOTOR(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
-            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+            void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data) override;
 
             void run_task() override;
 
@@ -391,67 +442,82 @@ namespace aim::ecat::task {
             MotorState state_{};
             uint8_t mode_change_buf_[8]{};
 
-            void change_state(const State new_state) {
+            void change_state(const State new_state)
+            {
                 state_.state.set(new_state);
                 state_.enter_timestamp.set_current();
             }
 
-            [[nodiscard]] uint32_t get_state_enter_time() const {
+            [[nodiscard]] uint32_t get_state_enter_time() const
+            {
                 return state_.enter_timestamp.get();
             }
 
-            [[nodiscard]] State get_current_state() const {
+            [[nodiscard]] State get_current_state() const
+            {
                 return state_.state.get();
             }
 
-            [[nodiscard]] uint32_t get_control_packet_id() const {
-                switch (mode_) {
-                    case CtrlMode::POSITION_WITH_SPEED_LIMIT: {
+            [[nodiscard]] uint32_t get_control_packet_id() const
+            {
+                switch (mode_)
+                {
+                case CtrlMode::POSITION_WITH_SPEED_LIMIT:
+                    {
                         return can_id_ + 0x100;
                     }
 
-                    case CtrlMode::SPEED: {
+                case CtrlMode::SPEED:
+                    {
                         return can_id_ + 0x200;
                     }
-                    case CtrlMode::MIT:
-                    default: {
+                case CtrlMode::MIT:
+                default:
+                    {
                         return can_id_;
                     }
                 }
             }
 
-            void generate_mode_change_packet() {
+            void generate_mode_change_packet()
+            {
                 memcpy(shared_tx_buf_, mode_change_buf_, 8);
             }
 
-            void generate_disable_packet() {
+            void generate_disable_packet()
+            {
                 memset(shared_tx_buf_, 0xff, 7);
                 shared_tx_buf_[7] = 0xfd;
             }
 
-            void generate_enable_packet() {
+            void generate_enable_packet()
+            {
                 memset(shared_tx_buf_, 0xff, 7);
                 shared_tx_buf_[7] = 0xfc;
             }
 
-            [[nodiscard]] bool is_online() const {
+            [[nodiscard]] bool is_online() const
+            {
                 return HAL_GetTick() - last_receive_time.get() <= 50;
             }
         };
     }
 
-    namespace adc {
-        inline float lowpass_filter(const float prev, const float current, const float alpha) {
+    namespace adc
+    {
+        inline float lowpass_filter(const float prev, const float current, const float alpha)
+        {
             return alpha * current + (1.0f - alpha) * prev;
         }
 
         constexpr float ADC_LF_ALPHA = 0.075;
 
-        class ADC final : public CustomRunnable {
+        class ADC final : public CustomRunnable
+        {
         public:
-            explicit ADC(buffer::Buffer *buffer);
+            explicit ADC(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
         private:
             ThreadSafeValue<float> parsed_adc_value_channel1{};
@@ -460,8 +526,10 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace dji_motor {
-        struct MotorReport {
+    namespace dji_motor
+    {
+        struct MotorReport
+        {
             ThreadSafeValue<uint16_t> ecd{};
             ThreadSafeValue<int16_t> rpm{};
             ThreadSafeValue<int16_t> current{};
@@ -470,18 +538,21 @@ namespace aim::ecat::task {
             ThreadSafeTimestamp last_receive_time{};
         };
 
-        enum class CtrlMode : uint8_t {
+        enum class CtrlMode : uint8_t
+        {
             OPEN_LOOP_CURRENT = 0x01,
             SPEED = 0x02,
             SINGLE_ROUND_POSITION = 0x03
         };
 
-        struct ControlCommand {
+        struct ControlCommand
+        {
             ThreadSafeFlag is_enable{};
             ThreadSafeValue<int16_t> cmd{};
         };
 
-        struct Motor {
+        struct Motor
+        {
             bool is_exist{false};
 
             MotorReport report{};
@@ -493,32 +564,36 @@ namespace aim::ecat::task {
             algorithm::PID speed_pid{};
             algorithm::PID angle_pid{};
 
-            [[nodiscard]] bool is_online() const {
+            [[nodiscard]] bool is_online() const
+            {
                 return HAL_GetTick() - report.last_receive_time.get() <= 50;
             }
         };
 
-        inline int16_t calculate_err(const uint16_t current_angle, const uint16_t target_angle) {
+        inline int16_t calculate_err(const uint16_t current_angle, const uint16_t target_angle)
+        {
             constexpr int total_positions = 8192;
             const int clockwise_difference = (target_angle - current_angle
-                                              + total_positions) % total_positions;
+                + total_positions) % total_positions;
             const int counterclockwise_difference = (current_angle - target_angle
-                                                     + total_positions) % total_positions;
-            if (clockwise_difference <= counterclockwise_difference) {
+                + total_positions) % total_positions;
+            if (clockwise_difference <= counterclockwise_difference)
+            {
                 return static_cast<int16_t>(clockwise_difference);
             }
             return static_cast<int16_t>(-counterclockwise_difference);
         }
 
-        class DJI_MOTOR final : public CanRunnable {
+        class DJI_MOTOR final : public CanRunnable
+        {
         public:
-            explicit DJI_MOTOR(buffer::Buffer *buffer);
+            explicit DJI_MOTOR(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
-            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+            void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data) override;
 
             void run_task() override;
 
@@ -531,14 +606,16 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace hipnuc_imu {
-        class HIPNUC_IMU_CAN final : public CanRunnable {
+    namespace hipnuc_imu
+    {
+        class HIPNUC_IMU_CAN final : public CanRunnable
+        {
         public:
-            explicit HIPNUC_IMU_CAN(buffer::Buffer *buffer);
+            explicit HIPNUC_IMU_CAN(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
-            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+            void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data) override;
 
         private:
             ThreadSafeBuffer buf_{21};
@@ -549,7 +626,8 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace pmu_uavcan {
+    namespace pmu_uavcan
+    {
         constexpr int BUF_SIZE = 64;
         // ms
         constexpr int TID_TIMEOUT = 1000;
@@ -557,7 +635,8 @@ namespace aim::ecat::task {
         // ms
         constexpr int STATE_BROADCAST_PERIOD = 1000;
 
-        struct RxState {
+        struct RxState
+        {
             uint8_t buffer[BUF_SIZE];
             uint16_t len;
             uint16_t crc;
@@ -567,20 +646,22 @@ namespace aim::ecat::task {
             uint32_t last_ts;
         };
 
-        struct TailByte {
+        struct TailByte
+        {
             uint8_t start;
             uint8_t end;
             uint8_t toggle;
             uint8_t tid;
         };
 
-        class PMU_UAVCAN final : public CanRunnable {
+        class PMU_UAVCAN final : public CanRunnable
+        {
         public:
-            explicit PMU_UAVCAN(buffer::Buffer */* buffer */);
+            explicit PMU_UAVCAN(buffer::Buffer*/* buffer */);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
-            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+            void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data) override;
 
             void run_task() override;
 
@@ -592,7 +673,8 @@ namespace aim::ecat::task {
             TailByte tail_{};
             RxState rx_state_{};
 
-            void parse_tail_byte(const uint8_t tail) {
+            void parse_tail_byte(const uint8_t tail)
+            {
                 tail_.start = tail >> 7 & 1;
                 tail_.end = tail >> 6 & 1;
                 tail_.toggle = tail >> 5 & 1;
@@ -601,12 +683,14 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace sbus_rc {
-        class SBUS_RC final : public UartRunnable {
+    namespace sbus_rc
+    {
+        class SBUS_RC final : public UartRunnable
+        {
         public:
-            explicit SBUS_RC(buffer::Buffer *buffer);
+            explicit SBUS_RC(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
             void uart_recv(uint16_t size) override;
 
@@ -620,27 +704,31 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace pwm {
+    namespace pwm
+    {
         constexpr uint32_t TIM2_FREQ = TIM2_FREQ_VAL;
         constexpr uint32_t TIM3_FREQ = TIM3_FREQ_VAL;
 
-        struct ControlCommand {
+        struct ControlCommand
+        {
             uint16_t channel1{};
             uint16_t channel2{};
             uint16_t channel3{};
             uint16_t channel4{};
         };
 
-        struct TIMSettingPair {
+        struct TIMSettingPair
+        {
             uint16_t psc;
             uint16_t arr;
         };
 
-        class PWM_ONBOARD final : public CustomRunnable {
+        class PWM_ONBOARD final : public CustomRunnable
+        {
         public:
-            explicit PWM_ONBOARD(buffer::Buffer *buffer);
+            explicit PWM_ONBOARD(buffer::Buffer* buffer);
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
             void on_connection_lost() override;
 
@@ -649,7 +737,7 @@ namespace aim::ecat::task {
         private:
             ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
 
-            TIM_HandleTypeDef *tim_inst_{nullptr};
+            TIM_HandleTypeDef* tim_inst_{nullptr};
             ControlCommand command_{};
             TIMSettingPair setting_pair_{};
             uint16_t expected_period_{};
@@ -657,7 +745,8 @@ namespace aim::ecat::task {
 
             ThreadSafeFlag in_protection_{false};
 
-            [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const {
+            [[nodiscard]] uint32_t calculate_compare(const uint16_t expected_high_pulse) const
+            {
                 return static_cast<uint32_t>(lround(
                     static_cast<double>(expected_high_pulse) /
                     static_cast<double>(expected_period_) *
@@ -665,7 +754,8 @@ namespace aim::ecat::task {
                 ));
             }
 
-            void send_signal() const {
+            void send_signal() const
+            {
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_1, command_.channel1);
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_2, command_.channel2);
                 __HAL_TIM_SET_COMPARE(tim_inst_, TIM_CHANNEL_3, command_.channel3);
@@ -673,18 +763,20 @@ namespace aim::ecat::task {
             }
         };
 
-        struct ExternalServoBoardControlPacket {
+        struct ExternalServoBoardControlPacket
+        {
             uint8_t header{0x01};
             uint16_t expected_period{};
             uint16_t servo_cmd[16]{};
             uint16_t checksum{};
         } __attribute__((packed));
 
-        class PWM_EXTERNAL final : public UartRunnable {
+        class PWM_EXTERNAL final : public UartRunnable
+        {
         public:
-            explicit PWM_EXTERNAL(buffer::Buffer *buffer);
+            explicit PWM_EXTERNAL(buffer::Buffer* buffer);
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
             void uart_dma_tx_finished_callback() override;
 
@@ -700,12 +792,14 @@ namespace aim::ecat::task {
             ThreadSafeTimestamp last_reset_time_{};
             ExternalServoBoardControlPacket control_packet_;
 
-            void send_packet() {
+            void send_packet()
+            {
                 uint8_t cmd_buf[37] = {};
                 memcpy(cmd_buf, &control_packet_, 37);
                 algorithm::crc16::append_CRC16_check_sum(cmd_buf, 37);
                 // if not busy, then return true, means data sent
-                if (get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37)) {
+                if (get_peripheral<peripheral::UartPeripheral>()->send_by_dma(cmd_buf, 37))
+                {
                     last_send_time_.set_current();
                 }
             }
@@ -719,7 +813,8 @@ namespace aim::ecat::task {
         constexpr uint32_t MOTOR_BITLENGTH = 20;
         constexpr uint32_t DSHOT_FRAME_SIZE = 16;
 
-        inline uint16_t dshot_prepare_packet(const uint16_t value) {
+        inline uint16_t dshot_prepare_packet(const uint16_t value)
+        {
             constexpr uint8_t dshot_telemetry = 0;
             uint16_t packet = value << 1 | dshot_telemetry;
 
@@ -727,7 +822,8 @@ namespace aim::ecat::task {
             unsigned csum = 0;
             unsigned csum_data = packet;
 
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++)
+            {
                 // xor data by nibbles
                 csum ^= csum_data;
                 csum_data >>= 4;
@@ -739,7 +835,8 @@ namespace aim::ecat::task {
             return packet;
         }
 
-        inline void dshot_prepare_dma_buffer(uint32_t *motor_dma_buffer, const uint16_t value) {
+        inline void dshot_prepare_dma_buffer(uint32_t* motor_dma_buffer, const uint16_t value)
+        {
             constexpr uint8_t dshot_telemetry = 0;
             uint16_t packet = static_cast<uint16_t>(algorithm::limit_max_min(value, 2047, 0)) << 1 | dshot_telemetry;
 
@@ -747,7 +844,8 @@ namespace aim::ecat::task {
             unsigned csum = 0;
             unsigned csum_data = packet;
 
-            for (int i = 0; i < 3; i++) {
+            for (int i = 0; i < 3; i++)
+            {
                 // xor data by nibbles
                 csum ^= csum_data;
                 csum_data >>= 4;
@@ -756,7 +854,8 @@ namespace aim::ecat::task {
             csum &= 0xf;
             packet = packet << 4 | csum;
 
-            for (int i = 0; i < 16; i++) {
+            for (int i = 0; i < 16; i++)
+            {
                 motor_dma_buffer[i] = packet & 0x8000 ? MOTOR_BIT_1 : MOTOR_BIT_0;
                 packet <<= 1;
             }
@@ -765,11 +864,12 @@ namespace aim::ecat::task {
             motor_dma_buffer[17] = 0;
         }
 
-        class DSHOT600 final : public CustomRunnable {
+        class DSHOT600 final : public CustomRunnable
+        {
         public:
-            explicit DSHOT600(buffer::Buffer *buffer);
+            explicit DSHOT600(buffer::Buffer* buffer);
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
             void exit() override;
 
@@ -782,17 +882,18 @@ namespace aim::ecat::task {
         private:
             ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
 
-            TIM_HandleTypeDef *tim_inst_{nullptr};
+            TIM_HandleTypeDef* tim_inst_{nullptr};
             ControlCommand command_{};
-            uint32_t *motor1_buffer{};
-            uint32_t *motor2_buffer{};
-            uint32_t *motor3_buffer{};
-            uint32_t *motor4_buffer{};
+            uint32_t* motor1_buffer{};
+            uint32_t* motor2_buffer{};
+            uint32_t* motor3_buffer{};
+            uint32_t* motor4_buffer{};
             uint16_t init_value_{};
 
             ThreadSafeFlag in_protection_{false};
 
-            void init_dshot_dma(const uint32_t tim_freq) const {
+            void init_dshot_dma(const uint32_t tim_freq) const
+            {
                 const uint16_t dshot_psc = lrintf(static_cast<float>(tim_freq) / DSHOT600_FREQ + 0.01f) - 1;
                 __HAL_TIM_SET_PRESCALER(tim_inst_, dshot_psc);
                 __HAL_TIM_SET_AUTORELOAD(tim_inst_, MOTOR_BITLENGTH);
@@ -803,7 +904,8 @@ namespace aim::ecat::task {
                 tim_inst_->hdma[TIM_DMA_ID_CC4]->XferCpltCallback = dshot_dma_tc_callback;
             }
 
-            void send_signal() const {
+            void send_signal() const
+            {
                 send_dma_request(motor1_buffer, command_.channel1, &tim_inst_->Instance->CCR1, TIM_DMA_ID_CC1,
                                  TIM_DMA_CC1);
                 send_dma_request(motor2_buffer, command_.channel2, &tim_inst_->Instance->CCR2, TIM_DMA_ID_CC2,
@@ -814,9 +916,11 @@ namespace aim::ecat::task {
                                  TIM_DMA_CC4);
             }
 
-            void send_dma_request(uint32_t *buffer, const uint16_t value, volatile uint32_t *ccr, const uint16_t dma_id,
-                                  const uint32_t dma_cc) const {
-                if (HAL_DMA_GetState(tim_inst_->hdma[dma_id]) == HAL_DMA_STATE_READY) {
+            void send_dma_request(uint32_t* buffer, const uint16_t value, volatile uint32_t* ccr, const uint16_t dma_id,
+                                  const uint32_t dma_cc) const
+            {
+                if (HAL_DMA_GetState(tim_inst_->hdma[dma_id]) == HAL_DMA_STATE_READY)
+                {
                     dshot_prepare_dma_buffer(buffer, value);
                     HAL_DMA_Start_IT(tim_inst_->hdma[dma_id], reinterpret_cast<uint32_t>(buffer),
                                      reinterpret_cast<uint32_t>(ccr), DSHOT_DMA_BUFFER_SIZE);
@@ -826,14 +930,17 @@ namespace aim::ecat::task {
         };
     }
 
-    namespace lk_motor {
-        enum class State {
+    namespace lk_motor
+    {
+        enum class State
+        {
             DISABLED,
             QUERYING_STATE,
             ENABLED
         };
 
-        struct MotorReport {
+        struct MotorReport
+        {
             ThreadSafeFlag is_motor_enabled{false};
 
             ThreadSafeValue<uint16_t> ecd{0};
@@ -843,7 +950,8 @@ namespace aim::ecat::task {
             ThreadSafeTimestamp last_receive_time{};
         };
 
-        struct ControlCommand {
+        struct ControlCommand
+        {
             ThreadSafeFlag is_enable{};
             ThreadSafeFlag last_is_enable{};
 
@@ -860,17 +968,20 @@ namespace aim::ecat::task {
             ThreadSafeValue<int32_t> cmd_int32{};
         };
 
-        struct Motor {
+        struct Motor
+        {
             MotorReport report{};
             ControlCommand command{};
             uint32_t report_packet_id{};
 
-            [[nodiscard]] bool is_online() const {
+            [[nodiscard]] bool is_online() const
+            {
                 return HAL_GetTick() - report.last_receive_time.get() <= 50;
             }
         };
 
-        enum class CtrlMode : uint8_t {
+        enum class CtrlMode : uint8_t
+        {
             OPEN_LOOP_CURRENT = 0x01,
             TORQUE = 0x02,
             SPEED_WITH_TORQUE_LIMIT = 0x03,
@@ -883,15 +994,16 @@ namespace aim::ecat::task {
 
         constexpr uint32_t BROADCAST_MODE_CTRL_PACKET_ID = 0x280;
 
-        class LK_MOTOR final : public CanRunnable {
+        class LK_MOTOR final : public CanRunnable
+        {
         public:
-            explicit LK_MOTOR(buffer::Buffer *buffer);
+            explicit LK_MOTOR(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
-            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+            void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data) override;
 
             void run_task() override;
 
@@ -906,25 +1018,30 @@ namespace aim::ecat::task {
 
             ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
 
-            void generate_disable_packet() {
+            void generate_disable_packet()
+            {
                 memset(shared_tx_buf_, 0, 8);
                 shared_tx_buf_[0] = 0x80;
             }
 
-            void generate_enable_packet() {
+            void generate_enable_packet()
+            {
                 memset(shared_tx_buf_, 0, 8);
                 shared_tx_buf_[0] = 0x88;
             }
 
-            void generate_state_check_packet() {
+            void generate_state_check_packet()
+            {
                 memset(shared_tx_buf_, 0, 8);
                 shared_tx_buf_[0] = 0x9A;
             }
         };
     }
 
-    namespace super_cap {
-        enum class ReportedState : uint8_t {
+    namespace super_cap
+    {
+        enum class ReportedState : uint8_t
+        {
             UNKNOWN = 255,
             DISCHARGE = 0,
             CHARGE = 1,
@@ -937,7 +1054,8 @@ namespace aim::ecat::task {
             OTP_PROTECTION = 8
         };
 
-        struct ReportPacket {
+        struct ReportPacket
+        {
             uint8_t cap_valid;
             uint8_t cap_status;
             uint8_t cap_remain_percentage;
@@ -946,7 +1064,8 @@ namespace aim::ecat::task {
             uint8_t chassis_only_power;
         };
 
-        struct ControlPacket {
+        struct ControlPacket
+        {
             // 1 enable 0 disable
             uint8_t cap_enable;
             // 1 charge 0 discharge
@@ -955,15 +1074,16 @@ namespace aim::ecat::task {
             uint8_t allow_charge_power;
         };
 
-        class SUPER_CAP final : public CanRunnable {
+        class SUPER_CAP final : public CanRunnable
+        {
         public:
-            explicit SUPER_CAP(buffer::Buffer *buffer);
+            explicit SUPER_CAP(buffer::Buffer* buffer);
 
-            void write_to_master(buffer::Buffer *slave_to_master_buf) override;
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
 
-            void read_from_master(buffer::Buffer *master_to_slave_buf) override;
+            void read_from_master(buffer::Buffer* master_to_slave_buf) override;
 
-            void can_recv(FDCAN_RxHeaderTypeDef *rx_header, uint8_t *rx_data) override;
+            void can_recv(FDCAN_RxHeaderTypeDef* rx_header, uint8_t* rx_data) override;
 
             void run_task() override;
 
@@ -980,6 +1100,31 @@ namespace aim::ecat::task {
             ThreadSafeBuffer tx_buf_{4};
 
             ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
+        };
+    }
+
+    namespace vt13_rc
+    {
+        constexpr uint16_t VT13_RC_CHANNAL_ERROR_VALUE = 1700;
+
+        class VT13_RC final : public UartRunnable
+        {
+        public:
+            explicit VT13_RC(buffer::Buffer* buffer);
+
+            void write_to_master(buffer::Buffer* slave_to_master_buf) override;
+
+            void uart_recv(uint16_t size) override;
+
+            void uart_err() override;
+
+            void exit() override;
+
+            void unpack_fifo();
+
+        private:
+            ThreadSafeTimestamp last_receive_time_{};
+            ThreadSafeBuffer buf_{17};
         };
     }
 }
