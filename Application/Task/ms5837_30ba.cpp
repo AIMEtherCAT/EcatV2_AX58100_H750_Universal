@@ -120,7 +120,7 @@ namespace aim::ecat::task::ms5837 {
                 break;
             }
             case State::READ_C5: {
-                c5_reference_temperature_ = read_calibration_data(4, &retry_times);
+                c5_reference_temperature_ = read_calibration_data(5, &retry_times);
                 if (c5_reference_temperature_ != 0) {
                     state_.set(State::READ_C6);
                     return;
@@ -128,7 +128,7 @@ namespace aim::ecat::task::ms5837 {
                 break;
             }
             case State::READ_C6: {
-                c6_temperature_coefficient_of_the_temperature_ = read_calibration_data(4, &retry_times);
+                c6_temperature_coefficient_of_the_temperature_ = read_calibration_data(6, &retry_times);
                 if (c6_temperature_coefficient_of_the_temperature_ != 0) {
                     state_.set(State::READ_D1);
                     return;
@@ -172,7 +172,7 @@ namespace aim::ecat::task::ms5837 {
                     static_cast<int64_t>(8388608)
                 );
                 off_ = static_cast<int64_t>(c2_pressure_offset_) *
-                       static_cast<int64_t>(65535) +
+                       static_cast<int64_t>(65536) +
                        static_cast<int64_t>(c4_temperature_coefficient_of_pressure_offset_) *
                        static_cast<int64_t>(dt_) /
                        static_cast<int64_t>(128);
@@ -228,15 +228,16 @@ namespace aim::ecat::task::ms5837 {
                 sens2_ = sens_ - sensi_;
 
                 temp2_.set(static_cast<int32_t>(temp_ - ti_));
-                p2_.set((
-                            static_cast<int32_t>(d1_digital_pressure_value_) *
-                            static_cast<int32_t>(sens2_) /
-                            2097152 -
-                            static_cast<int32_t>(off2_)
-                        ) /
-                        8192);
+                p2_.set(static_cast<int32_t>((
+                        static_cast<int64_t>(d1_digital_pressure_value_) *
+                        static_cast<int32_t>(sens2_) /
+                        2097152 -
+                        static_cast<int32_t>(off2_)
+                    ) /
+                    8192));
 
                 state_.set(State::READ_D1);
+                last_receive_time_.set_current();
                 vTaskDelay(1);
                 return;
             }
@@ -268,5 +269,6 @@ namespace aim::ecat::task::ms5837 {
     void MS5837_30BA::write_to_master(buffer::Buffer *slave_to_master_buf) {
         slave_to_master_buf->write_int32(buffer::EndianType::LITTLE, temp2_.get());
         slave_to_master_buf->write_int32(buffer::EndianType::LITTLE, p2_.get());
+        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, HAL_GetTick() - last_receive_time_.get() <= 500);
     }
 }

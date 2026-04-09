@@ -304,6 +304,8 @@ namespace aim::ecat::task
             ThreadSafeValue<int32_t> temp2_{};
             ThreadSafeValue<int32_t> p2_{};
 
+            ThreadSafeTimestamp last_receive_time_{};
+
             uint16_t read_calibration_data(const int index, uint8_t* retry_times) const
             {
                 uint8_t cmd = 0;
