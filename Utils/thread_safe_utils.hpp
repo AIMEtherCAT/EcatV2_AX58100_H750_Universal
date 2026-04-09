@@ -118,6 +118,8 @@ namespace aim::utils::thread_safety {
             : size_(size) {
             buf1_ = new uint8_t[size_];
             buf2_ = new uint8_t[size_];
+            memset(buf1_, 0, size_);
+            memset(buf2_, 0, size_);
             active_buf_.store(buf1_, std::memory_order_release);
         }
 

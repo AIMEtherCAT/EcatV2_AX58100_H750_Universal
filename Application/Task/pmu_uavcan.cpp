@@ -101,6 +101,7 @@ namespace aim::ecat::task::pmu_uavcan {
         if (is_last) {
             if (rx_state_.buffer[0] != 0) {
                 recv_buf_.write(rx_state_.buffer, 6);
+                last_receive_full_data_time_.set_current();
             }
 
             rx_state_.len = 0;
@@ -114,5 +115,6 @@ namespace aim::ecat::task::pmu_uavcan {
         uint8_t recv_buf[6] = {};
         recv_buf_.read(recv_buf, 6);
         slave_to_master_buf->write(recv_buf, 6);
+        slave_to_master_buf->write_uint8(buffer::EndianType::LITTLE, HAL_GetTick() - last_receive_full_data_time_.get() <= 1000);
     }
 }

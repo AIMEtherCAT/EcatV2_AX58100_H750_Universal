@@ -669,6 +669,7 @@ namespace aim::ecat::task
             ThreadSafeCounter uptime_{};
             ThreadSafeValue<uint8_t> transfer_id_{};
             ThreadSafeTimestamp last_receive_time_{};
+            ThreadSafeTimestamp last_receive_full_data_time_{};
             ThreadSafeBuffer recv_buf_{6};
             TailByte tail_{};
             RxState rx_state_{};
