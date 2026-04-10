@@ -787,13 +787,22 @@ namespace aim::ecat::task
 
             void run_task() override;
 
+            void on_connection_lost() override;
+
+            void on_connection_recover() override;
+
         private:
+            ConnectionLostAction connection_lost_action_{ConnectionLostAction::KEEP_LAST};
+
             uint8_t enabled_channel_count_{};
             uint16_t expected_period_{};
+            uint16_t init_value_{};
             ThreadSafeTimestamp last_send_time_{};
             ThreadSafeTimestamp last_send_finished_time_{};
             ThreadSafeTimestamp last_reset_time_{};
             ExternalServoBoardControlPacket control_packet_;
+
+            ThreadSafeFlag in_protection_{false};
 
             void send_packet()
             {
