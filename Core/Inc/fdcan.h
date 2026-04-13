@@ -41,9 +41,13 @@ extern FDCAN_HandleTypeDef hfdcan2;
 /* USER CODE END Private defines */
 
 void MX_FDCAN1_Init(void);
+
 void MX_FDCAN2_Init(void);
 
 /* USER CODE BEGIN Prototypes */
+void MX_FDCAN1_500K_Init(void);
+
+void MX_FDCAN2_500K_Init(void);
 
 /* USER CODE END Prototypes */
 
@@ -52,4 +56,3 @@ void MX_FDCAN2_Init(void);
 #endif
 
 #endif /* __FDCAN_H__ */
-

@@ -24,7 +24,7 @@ extern osMutexId I2C3InitMutexHandle;
 }
 
 namespace aim::hardware::peripheral {
-    void CANPeripheral::_init_impl() {
+    void init_can_peripheral(void (*can1_init_func)(), void (*can2_init_func)()) {
         FDCAN_FilterTypeDef can_filter;
 
         can_filter.IdType = FDCAN_STANDARD_ID;
@@ -34,15 +34,14 @@ namespace aim::hardware::peripheral {
         can_filter.FilterID1 = 0x00000000;
         can_filter.FilterID2 = 0x00000000;
 
-        MX_FDCAN1_Init();
+        can1_init_func();
         HAL_FDCAN_ConfigFilter(&hfdcan1, &can_filter);
         HAL_FDCAN_ConfigGlobalFilter(&hfdcan1, FDCAN_ACCEPT_IN_RX_FIFO0, FDCAN_ACCEPT_IN_RX_FIFO0,
                                      FDCAN_FILTER_REMOTE, FDCAN_FILTER_REMOTE);
         HAL_FDCAN_ActivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE, 0);
         HAL_FDCAN_Start(&hfdcan1);
 
-
-        MX_FDCAN2_Init();
+        can2_init_func();
         can_filter.IdType = FDCAN_STANDARD_ID;
         can_filter.FilterIndex = 0;
         can_filter.FilterType = FDCAN_FILTER_MASK;
@@ -66,12 +65,28 @@ namespace aim::hardware::peripheral {
         HAL_FDCAN_Start(&hfdcan2);
     }
 
-    void CANPeripheral::_deinit_impl() {
+    void deinit_can_peripheral() {
         HAL_FDCAN_DeactivateNotification(&hfdcan1, FDCAN_IT_RX_FIFO0_NEW_MESSAGE);
         HAL_FDCAN_DeInit(&hfdcan1);
 
         HAL_FDCAN_DeactivateNotification(&hfdcan2, FDCAN_IT_RX_FIFO1_NEW_MESSAGE);
         HAL_FDCAN_DeInit(&hfdcan2);
+    }
+
+    void CAN_1M_Peripheral::_init_impl() {
+        init_can_peripheral(MX_FDCAN1_Init, MX_FDCAN2_Init);
+    }
+
+    void CAN_1M_Peripheral::_deinit_impl() {
+        deinit_can_peripheral();
+    }
+
+    void CAN_500K_Peripheral::_init_impl() {
+        init_can_peripheral(MX_FDCAN1_500K_Init, MX_FDCAN2_500K_Init);
+    }
+
+    void CAN_500K_Peripheral::_deinit_impl() {
+        deinit_can_peripheral();
     }
 
     void USART1Peripheral::_init_impl() {
@@ -185,7 +200,8 @@ namespace aim::hardware::peripheral {
                                                                                 buffer::Type::I2C3_RECV));
         instances[Type::PERIPHERAL_TIM2] = std::make_unique<TIM2Peripheral>(TIM2InitMutexHandle);
         instances[Type::PERIPHERAL_TIM3] = std::make_unique<TIM3Peripheral>(TIM3InitMutexHandle);
-        instances[Type::PERIPHERAL_CAN] = std::make_unique<CANPeripheral>(CANInitMutexHandle);
+        instances[Type::PERIPHERAL_CAN_1M] = std::make_unique<CAN_1M_Peripheral>(CANInitMutexHandle);
+        instances[Type::PERIPHERAL_CAN_500K] = std::make_unique<CAN_500K_Peripheral>(CANInitMutexHandle);
     }
 
     Peripheral *get_peripheral(const Type type) {

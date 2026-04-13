@@ -12,7 +12,7 @@ extern "C" {
 
 namespace aim::ecat::task::pmu_uavcan {
     PMU_UAVCAN::PMU_UAVCAN(buffer::Buffer */* buffer */) : CanRunnable(true, TaskType::CAN_PMU) {
-        init_peripheral(peripheral::Type::PERIPHERAL_CAN);
+        init_peripheral(peripheral::Type::PERIPHERAL_CAN_1M);
 
         period = STATE_BROADCAST_PERIOD;
         can_id_type_ = FDCAN_EXTENDED_ID;

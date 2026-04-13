@@ -103,6 +103,12 @@ namespace aim::io::buffer {
                        : little_endian::write_float(value, get_buf_pointer<uint8_t>(), &index_);
         }
 
+        void write_uint32(const EndianType endian, const uint32_t value) {
+            return endian == EndianType::BIG
+                       ? big_endian::write_uint32(value, get_buf_pointer<uint8_t>(), &index_)
+                       : little_endian::write_uint32(value, get_buf_pointer<uint8_t>(), &index_);
+        }
+
         void read(uint8_t *dst, const int length) {
             memcpy(dst, get_buf_pointer<uint8_t>() + index_, length);
             index_ += length;

@@ -202,9 +202,9 @@ namespace aim::hardware::peripheral {
         void _deinit_impl() override;
     };
 
-    class CANPeripheral final : public Peripheral {
+    class CAN_1M_Peripheral final : public Peripheral {
     public:
-        explicit CANPeripheral(const osMutexId mutex) : Peripheral(mutex) {
+        explicit CAN_1M_Peripheral(const osMutexId mutex) : Peripheral(mutex) {
         }
 
     protected:
@@ -212,6 +212,18 @@ namespace aim::hardware::peripheral {
 
         void _deinit_impl() override;
     };
+
+    class CAN_500K_Peripheral final : public Peripheral {
+    public:
+        explicit CAN_500K_Peripheral(const osMutexId mutex) : Peripheral(mutex) {
+        }
+
+    protected:
+        void _init_impl() override;
+
+        void _deinit_impl() override;
+    };
+
 
     class UART4Peripheral final : public UartPeripheral {
     public:
@@ -290,7 +302,8 @@ namespace aim::hardware::peripheral {
         PERIPHERAL_UART4,
         PERIPHERAL_UART8,
         PERIPHERAL_I2C3,
-        PERIPHERAL_CAN,
+        PERIPHERAL_CAN_1M,
+        PERIPHERAL_CAN_500K,
         PERIPHERAL_TIM2,
         PERIPHERAL_TIM3,
         PERIPHERAL_ADC1

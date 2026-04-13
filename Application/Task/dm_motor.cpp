@@ -11,7 +11,7 @@ extern "C" {
 
 namespace aim::ecat::task::dm_motor {
     DM_MOTOR::DM_MOTOR(buffer::Buffer *buffer) : CanRunnable(true, TaskType::DM_MOTOR) {
-        init_peripheral(peripheral::Type::PERIPHERAL_CAN);
+        init_peripheral(peripheral::Type::PERIPHERAL_CAN_1M);
 
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
             case 0x01: {
