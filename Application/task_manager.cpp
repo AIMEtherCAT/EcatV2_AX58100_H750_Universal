@@ -164,6 +164,13 @@ namespace aim::ecat::task {
                     );
                     break;
                 }
+                case static_cast<uint8_t>(TaskType::DD_MOTOR): {
+                    conf->is_can_task.set();
+                    conf->runnable = std::make_unique<dd_motor::DD_MOTOR>(
+                        buffer::get_buffer(buffer::Type::ECAT_ARGS)
+                    );
+                    break;
+                }
                 default: {
                 }
             }

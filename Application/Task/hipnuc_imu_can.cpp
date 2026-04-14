@@ -11,7 +11,7 @@ extern "C" {
 
 namespace aim::ecat::task::hipnuc_imu {
     HIPNUC_IMU_CAN::HIPNUC_IMU_CAN(buffer::Buffer *buffer) : CanRunnable(false, TaskType::HIPNUC_IMU_CAN) {
-        init_peripheral(peripheral::Type::PERIPHERAL_CAN);
+        init_peripheral(peripheral::Type::PERIPHERAL_CAN_1M);
         can_id_type_ = FDCAN_STANDARD_ID;
 
         switch (buffer->read_uint8(buffer::EndianType::LITTLE)) {
