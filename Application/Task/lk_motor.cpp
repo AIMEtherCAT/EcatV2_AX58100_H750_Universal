@@ -184,7 +184,7 @@ namespace aim::ecat::task::lk_motor {
             motor_idx = 0;
             // if this is the state querying response packet
             if (const uint8_t packet_type = rx_data[0]; packet_type == 0x9A) {
-                if (const uint8_t motor_state = rx_data[6]; motor_state == 0x00) {
+                if (const uint8_t motor_state = rx_data[6]; motor_state == 0x00 || motor_state == 0x30) {
                     state_.set(State::ENABLED);
                 } else {
                     state_.set(State::DISABLED);
