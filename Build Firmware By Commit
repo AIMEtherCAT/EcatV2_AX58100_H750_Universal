@@ -1,0 +1,62 @@
+name: Build Firmware By Commit
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: "Branch, tag or commit SHA"
+        required: true
+        default: "9ade349f767a9b5b9e7ac5d59cafeab85d0bdc38"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout selected commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            cmake \
+            ninja-build \
+            gcc-arm-none-eabi \
+            binutils-arm-none-eabi
+
+      - name: Configure
+        run: |
+          cmake \
+            --preset Release \
+            -S . \
+            -B build/Release
+
+      - name: Build firmware
+        run: |
+          cmake \
+            --build build/Release \
+            --target EcatV2_AX58100_H750_Universal
+
+      - name: Generate BIN
+        run: |
+          cd build/Release
+
+          arm-none-eabi-objcopy \
+            -O binary \
+            EcatV2_AX58100_H750_Universal.elf \
+            EcatV2_AX58100_H750_Universal.bin
+
+      - name: Upload firmware
+        uses: actions/upload-artifact@v4
+        with:
+          name: firmware-${{ inputs.ref }}
+          path: |
+            build/Release/EcatV2_AX58100_H750_Universal.elf
+            build/Release/EcatV2_AX58100_H750_Universal.bin
+            build/Release/*.map
